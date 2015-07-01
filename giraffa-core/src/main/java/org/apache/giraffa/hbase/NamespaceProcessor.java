@@ -38,6 +38,8 @@ import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_DEFAU
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_SUPERUSERGROUP_DEFAULT;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_SUPERUSERGROUP_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_XATTRS_ENABLED_DEFAULT;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_XATTRS_ENABLED_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_REPLICATION_DEFAULT;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_REPLICATION_KEY;
 import static org.apache.hadoop.util.Time.now;
@@ -153,6 +155,7 @@ public class NamespaceProcessor implements ClientProtocol,
   private String fsOwnerShortUserName;
   private String supergroup;
   private boolean isPermissionEnabled;
+  private boolean xattrsEnabled;
 
   public NamespaceProcessor() {}
   
@@ -179,6 +182,9 @@ public class NamespaceProcessor implements ClientProtocol,
     LOG.info("fsOwner             = " + fsOwner);
     LOG.info("supergroup          = " + supergroup);
     LOG.info("isPermissionEnabled = " + isPermissionEnabled);
+    xattrsEnabled = conf.getBoolean(DFS_NAMENODE_XATTRS_ENABLED_KEY,
+        DFS_NAMENODE_XATTRS_ENABLED_DEFAULT);
+    LOG.info("xattrsEnabled = " + xattrsEnabled);
 
     RowKeyFactory.registerRowKey(conf);
     int configuredLimit = conf.getInt(
