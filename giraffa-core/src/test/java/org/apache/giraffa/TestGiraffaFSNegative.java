@@ -19,14 +19,17 @@ package org.apache.giraffa;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.EnumSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.fs.XAttrSetFlag;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.io.IOUtils;
 import org.junit.AfterClass;
@@ -35,6 +38,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.apache.giraffa.GiraffaTestUtils.printFileStatus;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_XATTRS_ENABLED_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -54,6 +58,9 @@ public class TestGiraffaFSNegative {
   public static void beforeClass() throws Exception {
     System.setProperty(
         HBaseTestingUtility.BASE_TEST_DIRECTORY_KEY, GiraffaTestUtils.BASE_TEST_DIRECTORY);
+    Configuration hbaseConf = UTIL.getConfiguration();
+    hbaseConf.setBoolean(DFS_NAMENODE_XATTRS_ENABLED_KEY, false);
+
     UTIL.startMiniCluster(1);
   }
 
@@ -281,6 +288,31 @@ public class TestGiraffaFSNegative {
       //must catch
     }
   }
+
+  @Test
+  public void testCanSetXAttrWhenFlagIsDisable() throws IOException {
+    Path path = new Path("abcd");
+    grfs.create(path);
+    String attrName = "user.attr1";    // there's naming rule
+    byte[] attrValue = new byte[20];   // randomly select a size
+
+    try {
+      grfs.setXAttr(path, attrName, attrValue);
+      assertTrue(false); // should not come here
+    } catch (IOException e) { }
+
+    try {
+      grfs.setXAttr(path, attrName, attrValue,
+                    EnumSet.of(XAttrSetFlag.CREATE));
+      assertTrue(false); // should not come here
+    } catch (IOException e) { }
+  }
+
+  @Test (expected =  IOException.class)
+  public void testCanListXAttrWhenFlagIsDisable() throws IOException {
+    grfs.listXAttrs(new Path("abcd"));
+  }
+
 
   public static void main(String[] args) throws Exception {
     TestGiraffaFSNegative test = new TestGiraffaFSNegative();
