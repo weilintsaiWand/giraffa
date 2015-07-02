@@ -19,6 +19,7 @@ package org.apache.giraffa;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.EnumSet;
 
 import org.apache.commons.logging.Log;
@@ -290,29 +291,73 @@ public class TestGiraffaFSNegative {
   }
 
   @Test
-  public void testCanSetXAttrWhenFlagIsDisable() throws IOException {
+  public void testCanNotSetXAttrWhenFlagIsDisable() throws IOException {
     Path path = new Path("abcd");
-    grfs.create(path);
     String attrName = "user.attr1";    // there's naming rule
     byte[] attrValue = new byte[20];   // randomly select a size
 
     try {
       grfs.setXAttr(path, attrName, attrValue);
       assertTrue(false); // should not come here
-    } catch (IOException e) { }
+    } catch (IOException e) {
+      assertTrue(e.toString().contains(DFS_NAMENODE_XATTRS_ENABLED_KEY));
+    }
 
     try {
       grfs.setXAttr(path, attrName, attrValue,
                     EnumSet.of(XAttrSetFlag.CREATE));
       assertTrue(false); // should not come here
-    } catch (IOException e) { }
+    } catch (IOException e) {
+      assertTrue(e.toString().contains(DFS_NAMENODE_XATTRS_ENABLED_KEY));
+    }
   }
 
-  @Test (expected =  IOException.class)
-  public void testCanListXAttrWhenFlagIsDisable() throws IOException {
-    grfs.listXAttrs(new Path("abcd"));
+  @Test
+  public void testCanNotListXAttrWhenFlagIsDisable() throws IOException {
+    try {
+      grfs.listXAttrs(new Path("abcd"));
+    } catch (IOException e) {
+      assertTrue(e.toString().contains(DFS_NAMENODE_XATTRS_ENABLED_KEY));
+    }
   }
 
+  @Test
+  public void testCanNotGetXAttrWhenFlagIsDisable() throws IOException {
+    Path path = new Path("abcd");
+    String attrName = "user.attr1";    // there's naming rule
+
+    try {
+      grfs.getXAttr(path, attrName);
+      assertTrue(false); // should not come here
+    } catch (IOException e) {
+      assertTrue(e.toString().contains(DFS_NAMENODE_XATTRS_ENABLED_KEY));
+    }
+
+    try {
+      grfs.getXAttrs(path);
+      assertTrue(false); // should not come here
+    } catch (IOException e) {
+      assertTrue(e.toString().contains(DFS_NAMENODE_XATTRS_ENABLED_KEY));
+    }
+
+    try {
+      grfs.getXAttrs(path, Collections.singletonList(attrName));
+      assertTrue(false); // should not come here
+    } catch (IOException e) {
+      assertTrue(e.toString().contains(DFS_NAMENODE_XATTRS_ENABLED_KEY));
+    }
+  }
+
+  @Test
+  public void testCanNotRemoveXAttrWhenFlagIsDisable() throws IOException {
+    Path path = new Path("abcd");
+    String attrName = "user.attr1";    // there's naming rule
+    try {
+      grfs.removeXAttr(path, attrName);
+    } catch (IOException e) {
+      assertTrue(e.toString().contains(DFS_NAMENODE_XATTRS_ENABLED_KEY));
+    }
+  }
 
   public static void main(String[] args) throws Exception {
     TestGiraffaFSNegative test = new TestGiraffaFSNegative();
