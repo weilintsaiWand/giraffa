@@ -1536,6 +1536,14 @@ public class NamespaceProcessor implements ClientProtocol,
     return running;
   }
 
+  public void checkXAttrsConfigFlag() throws IOException {
+    if(!this.xattrsEnabled) {
+      throw new IOException(String.format("The XAttr operation has been "
+       + "rejected.  Support for XAttrs has been disabled by setting %s to"
+       + " false.", new Object[]{"dfs.namenode.xattrs.enabled"}));
+    }
+  }
+
   private FSPermissionChecker getFsPermissionChecker() throws IOException {
     UserGroupInformation ugi = HBaseRpcUtil.getRemoteUser();
     return new FSPermissionChecker(fsOwnerShortUserName, supergroup, ugi);
@@ -1545,11 +1553,4 @@ public class NamespaceProcessor implements ClientProtocol,
     assert !new Path(src).isRoot();
   }
 
-  public void checkXAttrsConfigFlag() throws IOException {
-    if(!this.xattrsEnabled) {
-      throw new IOException(String.format("The XAttr operation has been "
-       + "rejected.  Support for XAttrs has been disabled by setting %s to"
-       + " false.", new Object[]{"dfs.namenode.xattrs.enabled"}));
-    }
-  }
 }
