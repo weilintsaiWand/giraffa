@@ -77,7 +77,7 @@ public class XAttrOp {
     }
     // TODO: check if we have access permission to path src
 
-    List<XAttr> oldXAttrList = listXAttrs(src);
+    List<XAttr> oldXAttrList = this.nodeManager.getXAttrs(src);
     // TODO, filter oldXAttrList (filter out those with permission problems)
 
     if (isGetAll) {
@@ -115,7 +115,7 @@ public class XAttrOp {
 
     checkIfFileExisted(src);
     // TODO. more permission checking ?
-    return nodeManager.listXAttrs(src);
+    return this.nodeManager.getXAttrs(src);
     // TODO. permission checking ? Filter result list
   }
 
