@@ -32,7 +32,7 @@ public class XAttrOp {
 
   public void setXAttr(String src, XAttr xAttr, EnumSet<XAttrSetFlag> flag)
           throws IOException {
-    if (src == null && xAttr == null && flag == null) {
+    if (src == null || xAttr == null || flag == null) {
       throw new IllegalArgumentException("Argument is null");
     }
 
@@ -63,7 +63,7 @@ public class XAttrOp {
 
   public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs)
           throws IOException {
-    if (src == null && xAttrs == null) {
+    if (src == null || xAttrs == null) {
       throw new IllegalArgumentException("Argument is null");
     }
     checkIfFileExisted(src);
@@ -120,7 +120,7 @@ public class XAttrOp {
   }
 
   public void removeXAttr(String src, XAttr xAttr) throws IOException {
-    if (src == null && xAttr == null) {
+    if (src == null || xAttr == null) {
       throw new IllegalArgumentException("Argument is null");
     }
 
