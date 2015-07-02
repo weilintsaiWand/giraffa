@@ -13,9 +13,6 @@ import java.util.*;
 /**
  * TODO. This is temp version so the java doc will write later
  * Handle all detail operations logic
- * It can be treated as a simplified version of
- * org.apache.hadoop.hdfs.server.namenode.FSDirXAttrOp and
- * org.apache.hadoop.hdfs.server.namenode.XAttrStorage
  *
  * Candidate of permission to check
  * 1. Check if XAttribute feature is enable
@@ -60,7 +57,7 @@ public class XAttrOp {
       XAttrSetFlag.validate(xAttr.getName(), false, flag);
     }
 
-    nodeManager.setXAttr(src, xAttr); // TODO, merge to updateINode
+    this.nodeManager.setXAttr(src, xAttr); // TODO, merge to updateINode
   }
 
   public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs)
@@ -139,11 +136,11 @@ public class XAttrOp {
         "No matching attributes found for remove operation");
     }
 
-    nodeManager.removeXAttr(src, xAttr); // TODO, merge to updateINode
+    this.nodeManager.removeXAttr(src, xAttr); // TODO, merge to updateINode
   }
 
   private INode checkIfFileExisted(String src) throws IOException {
-    INode node = nodeManager.getINode(src);
+    INode node = this.nodeManager.getINode(src);
     if (node == null) {
       throw new FileNotFoundException("File does not exist: " + src);
     }

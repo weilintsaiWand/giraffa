@@ -1486,22 +1486,26 @@ public class NamespaceProcessor implements ClientProtocol,
   @Override
   public void setXAttr(String src, XAttr xAttr, EnumSet<XAttrSetFlag> flag)
       throws IOException {
+    checkXAttrsConfigFlag();
     xAttrOp.setXAttr(src, xAttr, flag);
   }
 
   @Override
   public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs)
       throws IOException {
+    checkXAttrsConfigFlag();
     return xAttrOp.getXAttrs(src, xAttrs);
   }
 
   @Override
   public List<XAttr> listXAttrs(String src) throws IOException {
+    checkXAttrsConfigFlag();
     return xAttrOp.listXAttrs(src);
   }
 
   @Override
   public void removeXAttr(String src, XAttr xAttr) throws IOException {
+    checkXAttrsConfigFlag();
     xAttrOp.removeXAttr(src, xAttr);
   }
 
@@ -1539,5 +1543,14 @@ public class NamespaceProcessor implements ClientProtocol,
 
   private static void assertNotRoot(String src) {
     assert !new Path(src).isRoot();
+  }
+
+  /** derived from {@link NNConf#checkXAttrsConfigFlag()}
+   */
+  public void checkXAttrsConfigFlag() throws IOException {
+    if(!this.xattrsEnabled) {
+      throw new IOException(String.format("The XAttr operation has been"
+        + " rejected since the flag is off"));
+    }
   }
 }
