@@ -1545,12 +1545,11 @@ public class NamespaceProcessor implements ClientProtocol,
     assert !new Path(src).isRoot();
   }
 
-  /** derived from {@link NNConf#checkXAttrsConfigFlag()}
-   */
   public void checkXAttrsConfigFlag() throws IOException {
     if(!this.xattrsEnabled) {
-      throw new IOException(String.format("The XAttr operation has been"
-        + " rejected since the flag is off"));
+      throw new IOException(String.format("The XAttr operation has been "
+       + "rejected.  Support for XAttrs has been disabled by setting %s to"
+       + " false.", new Object[]{"dfs.namenode.xattrs.enabled"}));
     }
   }
 }
