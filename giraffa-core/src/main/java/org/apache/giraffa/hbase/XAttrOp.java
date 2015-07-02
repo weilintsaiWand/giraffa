@@ -15,7 +15,8 @@ import java.util.*;
  * Handle all detail operations logic
  *
  * Candidate of permission to check
- * 1. Check if XAttribute feature is enable
+ * (V) 1. Check if XAttribute feature is enable
+ *    (Checked in NamespaceProcessor)
  * 2. Check for XAttribute permission (system/user)
  * 3. Check for path permission (do we have write permission on specific path)
  * 4. Check for file system permission (does anyone blocking the file system?)
