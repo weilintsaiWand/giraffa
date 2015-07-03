@@ -58,7 +58,7 @@ public class XAttrOp {
       XAttrSetFlag.validate(xAttr.getName(), false, flag);
     }
 
-    this.nodeManager.setXAttr(src, xAttr); // TODO, merge to updateINode
+    nodeManager.setXAttr(src, xAttr); // TODO, merge to updateINode
   }
 
   public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs)
@@ -77,7 +77,7 @@ public class XAttrOp {
     }
     // TODO: check if we have access permission to path src
 
-    List<XAttr> oldXAttrList = this.nodeManager.getXAttrs(src);
+    List<XAttr> oldXAttrList = nodeManager.getXAttrs(src);
     // TODO, filter oldXAttrList (filter out those with permission problems)
 
     if (isGetAll) {
@@ -115,7 +115,7 @@ public class XAttrOp {
 
     checkIfFileExisted(src);
     // TODO. more permission checking ?
-    return this.nodeManager.getXAttrs(src);
+    return nodeManager.getXAttrs(src);
     // TODO. permission checking ? Filter result list
   }
 
@@ -137,11 +137,11 @@ public class XAttrOp {
         "No matching attributes found for remove operation");
     }
 
-    this.nodeManager.removeXAttr(src, xAttr); // TODO, merge to updateINode
+    nodeManager.removeXAttr(src, xAttr); // TODO, merge to updateINode
   }
 
   private INode checkIfFileExisted(String src) throws IOException {
-    INode node = this.nodeManager.getINode(src);
+    INode node = nodeManager.getINode(src);
     if (node == null) {
       throw new FileNotFoundException("File does not exist: " + src);
     }
