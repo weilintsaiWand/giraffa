@@ -140,7 +140,7 @@ public class NamespaceProcessor implements ClientProtocol,
   Service service = ClientNamenodeProtocol.newReflectiveService(translator);
 
   private INodeManager nodeManager;
-  private XAttrOp xAttrOp;
+  private XAttrStorage xAttrStorage;
 
   private LeaseManager leaseManager;
   private Daemon monitor;
@@ -225,7 +225,7 @@ public class NamespaceProcessor implements ClientProtocol,
         LeaseManager.originateSharedLeaseManager(e.getRegionServerServices()
             .getRpcServer().getListenerAddress().toString());
     this.nodeManager = new INodeManager(e.getTable(tableName));
-    this.xAttrOp = new XAttrOp(nodeManager);
+    this.xAttrStorage = new XAttrStorage(nodeManager);
     this.monitor = leaseManager.getMonitor(this);
     leaseManager.startMonitor();
     this.running = true;
@@ -1487,26 +1487,26 @@ public class NamespaceProcessor implements ClientProtocol,
   public void setXAttr(String src, XAttr xAttr, EnumSet<XAttrSetFlag> flag)
       throws IOException {
     checkXAttrsConfigFlag();
-    xAttrOp.setXAttr(src, xAttr, flag);
+    xAttrStorage.setXAttr(src, xAttr, flag);
   }
 
   @Override
   public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs)
       throws IOException {
     checkXAttrsConfigFlag();
-    return xAttrOp.getXAttrs(src, xAttrs);
+    return xAttrStorage.getXAttrs(src, xAttrs);
   }
 
   @Override
   public List<XAttr> listXAttrs(String src) throws IOException {
     checkXAttrsConfigFlag();
-    return xAttrOp.listXAttrs(src);
+    return xAttrStorage.listXAttrs(src);
   }
 
   @Override
   public void removeXAttr(String src, XAttr xAttr) throws IOException {
     checkXAttrsConfigFlag();
-    xAttrOp.removeXAttr(src, xAttr);
+    xAttrStorage.removeXAttr(src, xAttr);
   }
 
   public boolean internalReleaseLease(FileLease lease, String src)

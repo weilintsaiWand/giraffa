@@ -629,91 +629,91 @@ public class TestXAttr extends FSXAttrBaseTest {
 
   @Override
   public void testSetXAttr() throws Exception {
-    FileSystem.mkdirs(this.fs, path, FsPermission.createImmutable((short)488));
-    this.fs.setXAttr(path, "user.a1", value1, EnumSet.of(XAttrSetFlag.CREATE, XAttrSetFlag.REPLACE));
-    Map xattrs = this.fs.getXAttrs(path);
-    Assert.assertEquals((long)xattrs.size(), 1L);
-    Assert.assertArrayEquals(value1, (byte[])xattrs.get("user.a1"));
-    this.fs.removeXAttr(path, "user.a1");
-
-    try {
-      this.fs.setXAttr(path, (String)null, value1, EnumSet.of(XAttrSetFlag.CREATE, XAttrSetFlag.REPLACE));
-      Assert.fail("Setting xattr with null name should fail.");
-    } catch (NullPointerException var13) {
-      GenericTestUtils
-          .assertExceptionContains("XAttr name cannot be null", var13);
-    } catch (RemoteException var14) {
-      GenericTestUtils.assertExceptionContains("XAttr name cannot be null", var14);
-    }
-
-    try {
-      this.fs.setXAttr(path, "user.", value1, EnumSet.of(XAttrSetFlag.CREATE, XAttrSetFlag.REPLACE));
-      Assert.fail("Setting xattr with empty name should fail.");
-    } catch (RemoteException var11) {
-      Assert.assertEquals("Unexpected RemoteException: " + var11, var11.getClassName(), HadoopIllegalArgumentException.class.getCanonicalName());
-      GenericTestUtils.assertExceptionContains("XAttr name cannot be empty", var11);
-    } catch (HadoopIllegalArgumentException var12) {
-      GenericTestUtils.assertExceptionContains("XAttr name cannot be empty", var12);
-    }
-
-    try {
-      this.fs.setXAttr(path, "a1", value1, EnumSet.of(XAttrSetFlag.CREATE, XAttrSetFlag.REPLACE));
-      Assert.fail("Setting xattr with invalid name prefix or without name prefix should fail.");
-    } catch (RemoteException var9) {
-      Assert.assertEquals("Unexpected RemoteException: " + var9, var9.getClassName(), HadoopIllegalArgumentException.class.getCanonicalName());
-      GenericTestUtils.assertExceptionContains("XAttr name must be prefixed", var9);
-    } catch (HadoopIllegalArgumentException var10) {
-      GenericTestUtils.assertExceptionContains("XAttr name must be prefixed", var10);
-    }
-
-    this.fs.setXAttr(path, "user.a1", value1);
-    xattrs = this.fs.getXAttrs(path);
-    Assert.assertEquals((long)xattrs.size(), 1L);
-    Assert.assertArrayEquals(value1, (byte[])xattrs.get("user.a1"));
-    this.fs.removeXAttr(path, "user.a1");
-    this.fs.setXAttr(path, "user.a1", value1, EnumSet.of(XAttrSetFlag.CREATE));
-    this.fs.setXAttr(path, "user.a1", newValue1, EnumSet.of(XAttrSetFlag.CREATE, XAttrSetFlag.REPLACE));
-    xattrs = this.fs.getXAttrs(path);
-    Assert.assertEquals((long)xattrs.size(), 1L);
-    Assert.assertArrayEquals(newValue1, (byte[])xattrs.get("user.a1"));
-    this.fs.removeXAttr(path, "user.a1");
-    this.fs.setXAttr(path, "user.a1", value1);
-    this.fs.setXAttr(path, "user.a2", value2);
-    this.fs.setXAttr(path, "user.a3", (byte[])null);
-
-    try {
-      this.fs.setXAttr(path, "user.a4", (byte[])null);
-      Assert.fail("Setting xattr should fail if total number of xattrs for inode exceeds max limit.");
-    } catch (IOException var8) {
-      GenericTestUtils.assertExceptionContains("Cannot add additional XAttr", var8);
-    }
-
-    this.fs.removeXAttr(path, "user.a1");
-    this.fs.removeXAttr(path, "user.a2");
-    this.fs.removeXAttr(path, "user.a3");
-    String longName = "user.0123456789abcdefX";
-
-    try {
-      this.fs.setXAttr(path, longName, (byte[])null);
-      Assert.fail("Setting xattr should fail if name is too long.");
-    } catch (IOException var7) {
-      GenericTestUtils.assertExceptionContains("XAttr is too big", var7);
-      GenericTestUtils.assertExceptionContains("total size is 17", var7);
-    }
-
-    byte[] longValue = new byte[16];
-
-    try {
-      this.fs.setXAttr(path, "user.a", longValue);
-      Assert.fail("Setting xattr should fail if value is too long.");
-    } catch (IOException var6) {
-      GenericTestUtils.assertExceptionContains("XAttr is too big", var6);
-      GenericTestUtils.assertExceptionContains("total size is 17", var6);
-    }
-
-    String name = "user.111";
-    byte[] value = new byte[13];
-    this.fs.setXAttr(path, name, value);
+//    FileSystem.mkdirs(this.fs, path, FsPermission.createImmutable((short)488));
+//    this.fs.setXAttr(path, "user.a1", value1, EnumSet.of(XAttrSetFlag.CREATE, XAttrSetFlag.REPLACE));
+//    Map xattrs = this.fs.getXAttrs(path);
+//    Assert.assertEquals((long)xattrs.size(), 1L);
+//    Assert.assertArrayEquals(value1, (byte[])xattrs.get("user.a1"));
+//    this.fs.removeXAttr(path, "user.a1");
+//
+//    try {
+//      this.fs.setXAttr(path, (String)null, value1, EnumSet.of(XAttrSetFlag.CREATE, XAttrSetFlag.REPLACE));
+//      Assert.fail("Setting xattr with null name should fail.");
+//    } catch (NullPointerException var13) {
+//      GenericTestUtils
+//          .assertExceptionContains("XAttr name cannot be null", var13);
+//    } catch (RemoteException var14) {
+//      GenericTestUtils.assertExceptionContains("XAttr name cannot be null", var14);
+//    }
+//
+//    try {
+//      this.fs.setXAttr(path, "user.", value1, EnumSet.of(XAttrSetFlag.CREATE, XAttrSetFlag.REPLACE));
+//      Assert.fail("Setting xattr with empty name should fail.");
+//    } catch (RemoteException var11) {
+//      Assert.assertEquals("Unexpected RemoteException: " + var11, var11.getClassName(), HadoopIllegalArgumentException.class.getCanonicalName());
+//      GenericTestUtils.assertExceptionContains("XAttr name cannot be empty", var11);
+//    } catch (HadoopIllegalArgumentException var12) {
+//      GenericTestUtils.assertExceptionContains("XAttr name cannot be empty", var12);
+//    }
+//
+//    try {
+//      this.fs.setXAttr(path, "a1", value1, EnumSet.of(XAttrSetFlag.CREATE, XAttrSetFlag.REPLACE));
+//      Assert.fail("Setting xattr with invalid name prefix or without name prefix should fail.");
+//    } catch (RemoteException var9) {
+//      Assert.assertEquals("Unexpected RemoteException: " + var9, var9.getClassName(), HadoopIllegalArgumentException.class.getCanonicalName());
+//      GenericTestUtils.assertExceptionContains("XAttr name must be prefixed", var9);
+//    } catch (HadoopIllegalArgumentException var10) {
+//      GenericTestUtils.assertExceptionContains("XAttr name must be prefixed", var10);
+//    }
+//
+//    this.fs.setXAttr(path, "user.a1", value1);
+//    xattrs = this.fs.getXAttrs(path);
+//    Assert.assertEquals((long)xattrs.size(), 1L);
+//    Assert.assertArrayEquals(value1, (byte[])xattrs.get("user.a1"));
+//    this.fs.removeXAttr(path, "user.a1");
+//    this.fs.setXAttr(path, "user.a1", value1, EnumSet.of(XAttrSetFlag.CREATE));
+//    this.fs.setXAttr(path, "user.a1", newValue1, EnumSet.of(XAttrSetFlag.CREATE, XAttrSetFlag.REPLACE));
+//    xattrs = this.fs.getXAttrs(path);
+//    Assert.assertEquals((long)xattrs.size(), 1L);
+//    Assert.assertArrayEquals(newValue1, (byte[])xattrs.get("user.a1"));
+//    this.fs.removeXAttr(path, "user.a1");
+//    this.fs.setXAttr(path, "user.a1", value1);
+//    this.fs.setXAttr(path, "user.a2", value2);
+//    this.fs.setXAttr(path, "user.a3", (byte[])null);
+//
+//    try {
+//      this.fs.setXAttr(path, "user.a4", (byte[])null);
+//      Assert.fail("Setting xattr should fail if total number of xattrs for inode exceeds max limit.");
+//    } catch (IOException var8) {
+//      GenericTestUtils.assertExceptionContains("Cannot add additional XAttr", var8);
+//    }
+//
+//    this.fs.removeXAttr(path, "user.a1");
+//    this.fs.removeXAttr(path, "user.a2");
+//    this.fs.removeXAttr(path, "user.a3");
+//    String longName = "user.0123456789abcdefX";
+//
+//    try {
+//      this.fs.setXAttr(path, longName, (byte[])null);
+//      Assert.fail("Setting xattr should fail if name is too long.");
+//    } catch (IOException var7) {
+//      GenericTestUtils.assertExceptionContains("XAttr is too big", var7);
+//      GenericTestUtils.assertExceptionContains("total size is 17", var7);
+//    }
+//
+//    byte[] longValue = new byte[16];
+//
+//    try {
+//      this.fs.setXAttr(path, "user.a", longValue);
+//      Assert.fail("Setting xattr should fail if value is too long.");
+//    } catch (IOException var6) {
+//      GenericTestUtils.assertExceptionContains("XAttr is too big", var6);
+//      GenericTestUtils.assertExceptionContains("total size is 17", var6);
+//    }
+//
+//    String name = "user.111";
+//    byte[] value = new byte[13];
+//    this.fs.setXAttr(path, name, value);
   }
 
   @Override
