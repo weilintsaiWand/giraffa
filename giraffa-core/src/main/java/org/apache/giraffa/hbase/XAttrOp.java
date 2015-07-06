@@ -1,14 +1,19 @@
 package org.apache.giraffa.hbase;
 
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT;
+
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import org.apache.giraffa.INode;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.XAttr;
 import org.apache.hadoop.fs.XAttrSetFlag;
-import org.apache.hadoop.hdfs.*;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.List;
 
 /**
  * TODO. This is temp version so the java doc will write later
@@ -29,9 +34,15 @@ import java.util.*;
  */
 public class XAttrOp {
   private INodeManager nodeManager;
+  private int inodeXAttrsLimit;
 
-  public XAttrOp(INodeManager nodeManager) {
+  public XAttrOp(INodeManager nodeManager, Configuration conf) {
     this.nodeManager = nodeManager;
+    this.inodeXAttrsLimit = conf.getInt(DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY,
+                            DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT);
+    Preconditions.checkArgument(inodeXAttrsLimit >= 0,
+       "Cannot set a negative limit on the number of xattrs per inode (%s).",
+       new Object[]{DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY});
   }
 
   public void setXAttr(String src, XAttr xAttr, EnumSet<XAttrSetFlag> flag)
@@ -46,20 +57,31 @@ public class XAttrOp {
     // TODO. Think about what kind of permissions to be checked exactly
     // do the permission checking.
 
-    // check if we can overwrite
+    // check if we can overwrite/ exceed attr numbers limit of a file
     boolean isAttrExisted = false;
+    int userVisibleXAttrsNum = 0;
     List<XAttr> oldXAttrList = listXAttrs(src);
     if (oldXAttrList != null) {
       for (XAttr oldAttr : oldXAttrList) {
-        if (oldAttr != null && xAttr.getName().equals(oldAttr.getName())) {
+        if (xAttr.equalsIgnoreValue(oldAttr)) {
           XAttrSetFlag.validate(xAttr.getName(), true, flag);
           isAttrExisted = true;
-          break;
+        }
+        if (isUserVisible(oldAttr)){
+          ++userVisibleXAttrsNum;
         }
       }
     }
     if (!isAttrExisted) { // in this case, need checked if CREATE is set
       XAttrSetFlag.validate(xAttr.getName(), false, flag);
+      if (isUserVisible(xAttr)) {
+        ++userVisibleXAttrsNum;
+      }
+    }
+
+    if(userVisibleXAttrsNum > inodeXAttrsLimit) {
+      throw new IOException("Cannot add additional XAttr to inode,"
+                            + " would exceed limit of " + inodeXAttrsLimit);
     }
 
     nodeManager.setXAttr(src, xAttr); // TODO, merge to updateINode
@@ -151,4 +173,14 @@ public class XAttrOp {
     }
     return node;
   }
+
+  /**
+   * copy from
+   * {@link org.apache.hadoop.hdfs.server.namenode.FSDirectory}
+   */
+  private boolean isUserVisible(XAttr xAttr) {
+    return xAttr.getNameSpace() == XAttr.NameSpace.USER ||
+           xAttr.getNameSpace() == XAttr.NameSpace.TRUSTED;
+  }
+
 }

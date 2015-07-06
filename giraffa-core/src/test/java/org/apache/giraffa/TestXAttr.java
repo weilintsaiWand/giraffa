@@ -17,6 +17,7 @@
  */
 package org.apache.giraffa;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.server.namenode.FSXAttrBaseTest;
 
 import org.apache.commons.logging.Log;
@@ -48,13 +49,13 @@ import java.util.Map;
 import java.util.Random;
 
 import static org.apache.hadoop.fs.CreateFlag.CREATE;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import mockit.Mock;
 import mockit.MockUp;
-import mockit.Mocked;
 
 /**
  * This file is dedicated to test extended attribute(XAttr) related methods
@@ -82,7 +83,9 @@ public class TestXAttr extends FSXAttrBaseTest {
   public static void beforeClass() throws Exception {
     System.setProperty(
         HBaseTestingUtility.BASE_TEST_DIRECTORY_KEY,
-            GiraffaTestUtils.BASE_TEST_DIRECTORY);
+         GiraffaTestUtils.BASE_TEST_DIRECTORY);
+    Configuration hbaseConf = UTIL.getConfiguration();
+    hbaseConf.setInt(DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY, 3);
 
     UTIL.startMiniCluster(1);
 
@@ -572,7 +575,7 @@ public class TestXAttr extends FSXAttrBaseTest {
 //  public void testCanNotRemoveAnAttrWithNullAttrName() throws IOException {
 //    grfs.removeXAttr(path1, null);
 //  }
-//
+
 //  @Test (expected = IOException.class)
 //  public void testCanNotRemoveNonExistedAttr() throws IOException {
 //    grfs.removeXAttr(path1, attrName1);
