@@ -225,7 +225,7 @@ public class NamespaceProcessor implements ClientProtocol,
         LeaseManager.originateSharedLeaseManager(e.getRegionServerServices()
             .getRpcServer().getListenerAddress().toString());
     this.nodeManager = new INodeManager(e.getTable(tableName));
-    this.xAttrOp = new XAttrOp(nodeManager);
+    this.xAttrOp = new XAttrOp(nodeManager, conf);
     this.monitor = leaseManager.getMonitor(this);
     leaseManager.startMonitor();
     this.running = true;
