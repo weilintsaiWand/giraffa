@@ -42,7 +42,7 @@ public class XAttrOp {
                             DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT);
     Preconditions.checkArgument(inodeXAttrsLimit >= 0,
        "Cannot set a negative limit on the number of xattrs per inode (%s).",
-       new Object[]{DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY});
+       DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY);
   }
 
   public void setXAttr(String src, XAttr xAttr, EnumSet<XAttrSetFlag> flag)
