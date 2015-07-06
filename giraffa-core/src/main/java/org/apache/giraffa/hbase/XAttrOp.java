@@ -13,6 +13,9 @@ import java.util.*;
 /**
  * TODO. This is temp version so the java doc will write later
  * Handle all detail operations logic
+ * Do the similar thing as
+ * {@link org.apache.hadoop.hdfs.server.namenode.XAttrStorage}
+ * but not the same
  *
  * Candidate of permission to check
  * (V) 1. Check if XAttribute feature is enable
@@ -24,10 +27,10 @@ import java.util.*;
  * 6. Check attribute size (max len of name)
  * 7. check if exceed limit size of attr for given node
  */
-public class XAttrStorage {
+public class XAttrOp {
   private INodeManager nodeManager;
 
-  public XAttrStorage(INodeManager nodeManager) {
+  public XAttrOp(INodeManager nodeManager) {
     this.nodeManager = nodeManager;
   }
 
