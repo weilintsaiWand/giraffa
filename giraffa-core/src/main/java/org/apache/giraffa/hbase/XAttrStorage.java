@@ -20,13 +20,14 @@ import java.util.*;
  * 2. Check for XAttribute permission (system/user)
  * 3. Check for path permission (do we have write permission on specific path)
  * 4. Check for file system permission (does anyone blocking the file system?)
- * 5. validate if flag is valid
- * 6. Check attribute size (max len of name, the limited attribute to a file )
+ * (v) 5. validate if flag is valid
+ * 6. Check attribute size (max len of name)
+ * 7. check if exceed limit size of attr for given node
  */
-public class XAttrOp {
+public class XAttrStorage {
   private INodeManager nodeManager;
 
-  public XAttrOp(INodeManager nodeManager) {
+  public XAttrStorage(INodeManager nodeManager) {
     this.nodeManager = nodeManager;
   }
 
