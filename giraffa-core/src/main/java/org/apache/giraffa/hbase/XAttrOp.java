@@ -121,7 +121,7 @@ public class XAttrOp {
 
     // TODO some permission checking here
     if (!isGetAll && isPermissionEnabled) {
-    // TODO  checkPermissionForApi(pc, xAttrs);
+      checkPermissionForApi(pc, xAttrs);
     }
     checkPathAccess(src, pc,FsAction.READ);
 
@@ -247,11 +247,6 @@ public class XAttrOp {
   private void checkPathAccess(String src, FSPermissionChecker pc,
                                FsAction access) throws IOException{
     INode iFile = nodeManager.getINode(src);
-    try {
-      pc.check(iFile, access);
-    } catch (AccessControlException e) {
-      // backward compatible to old tests
-      throw new IOException ("User doesn't have permission");
-    }
+    pc.check(iFile, access);
   }
 }
