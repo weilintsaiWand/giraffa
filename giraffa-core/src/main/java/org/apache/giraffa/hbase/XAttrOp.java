@@ -40,9 +40,11 @@ import java.util.List;
  * 2. Check for XAttribute permission (system/user)
  * 3. Check for path permission (do we have write permission on specific path)
  * 4. Check for file system permission (does anyone blocking the file system?)
- * (v) 5. validate if flag is valid
- * 6. Check attribute size (max len of name)
- * 7. check if exceed limit size of attr for given node
+ *    readlock/write lock
+ * (V) 5. validate if flag is valid
+ * (V) 6. Check attribute size (max len of name)
+ * (V) 7. check if exceed limit size of attr for given node
+ * 8. Check if raw path
  */
 public class XAttrOp {
   private INodeManager nodeManager;
@@ -123,7 +125,7 @@ public class XAttrOp {
     if (!isGetAll && isPermissionEnabled) {
       checkPermissionForApi(pc, xAttrs);
     }
-    checkPathAccess(src, pc,FsAction.READ);
+    checkPathAccess(pc, src,FsAction.READ);
 
     List<XAttr> oldXAttrList = nodeManager.getXAttrs(src);
     // TODO, filter oldXAttrList (filter out those with permission problems)
@@ -173,7 +175,13 @@ public class XAttrOp {
     }
 
     checkIfFileExisted(src);
-    // TODO permission checking
+    FSPermissionChecker pc = getFsPermissionChecker();
+    if (isPermissionEnabled) {
+      checkPermissionForApi(pc, xAttr);
+    }
+
+    // Check if change permission
+    checkXAttrChangeAccess(src, xAttr, pc);
 
     // check if the attributes existed or not
     List<XAttr> targetXAttrList = Lists.newArrayListWithCapacity(1);
@@ -244,7 +252,29 @@ public class XAttrOp {
     }
   }
 
-  private void checkPathAccess(String src, FSPermissionChecker pc,
+  /**
+   * derived from
+   * {@link org.apache.hadoop.hdfs.server.namenode.FSNamesystem}
+   */
+  private void checkXAttrChangeAccess(String src, XAttr xAttr,
+     FSPermissionChecker pc) throws IOException {
+    if(isPermissionEnabled && xAttr.getNameSpace() == XAttr.NameSpace.USER) {
+      INode node = nodeManager.getINode(src);
+      if(node.isDir() && node.getPermission().getStickyBit()) {
+        if(!pc.isSuperUser()) {
+          pc.checkOwner(node);
+        }
+      } else {
+        checkPathAccess(pc, src, FsAction.WRITE);
+      }
+    }
+  }
+
+  /**
+   * signature copy from
+   * {@link org.apache.hadoop.hdfs.server.namenode.FSNamesystem}
+   */
+  private void checkPathAccess(FSPermissionChecker pc, String src,
                                FsAction access) throws IOException{
     INode iFile = nodeManager.getINode(src);
     pc.check(iFile, access);

@@ -32,6 +32,7 @@ import org.apache.hadoop.fs.XAttrSetFlag;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.ipc.RemoteException;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.test.GenericTestUtils;
 import org.junit.After;
@@ -101,13 +102,21 @@ public class TestXAttr extends FSXAttrBaseTest {
   }
 
   private class MockDistributedFileSystem extends DistributedFileSystem {
-   @Override
-    public byte[] getXAttr(Path path, final String name) throws IOException {
+    private GiraffaFileSystem getFS() throws IOException {
       GiraffaConfiguration tmpConf =
           new GiraffaConfiguration(UTIL.getConfiguration());
       GiraffaTestUtils.setGiraffaURI(tmpConf);
-      GiraffaFileSystem tmpGrfs = (GiraffaFileSystem) FileSystem.get(tmpConf);
-      return tmpGrfs.getXAttr(path, name);
+      return (GiraffaFileSystem) FileSystem.get(tmpConf);
+    }
+
+    @Override
+    public byte[] getXAttr(Path path, final String name) throws IOException {
+      return getFS().getXAttr(path, name);
+    }
+
+    @Override
+    public void removeXAttr(Path path, final String name) throws IOException {
+      getFS().removeXAttr(path, name);
     }
   }
 
@@ -667,13 +676,13 @@ public class TestXAttr extends FSXAttrBaseTest {
 
   @Override // pass
   public void testGetXAttrs() throws Exception {}
-*/
-  @Override
+
+  @Override // pass
   public void testRemoveXAttr() throws Exception {}
 
-  @Override
+  @Override // pass
   public void testRemoveXAttrPermissions() throws Exception {}
-
+*/
   @Override
   public void testRenameFileWithXAttr() throws Exception {}
 
