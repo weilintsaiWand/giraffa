@@ -17,12 +17,14 @@
  */
 package org.apache.giraffa;
 
+import org.apache.hadoop.HadoopIllegalArgumentException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
+import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.hdfs.server.namenode.FSXAttrBaseTest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.HadoopIllegalArgumentException;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -30,7 +32,7 @@ import org.apache.hadoop.fs.XAttrSetFlag;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.io.IOUtils;
-import org.apache.hadoop.ipc.RemoteException;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.test.GenericTestUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -41,6 +43,8 @@ import org.junit.Test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -55,6 +59,8 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Lists;
+
 import mockit.Mock;
 import mockit.MockUp;
 
@@ -64,6 +70,7 @@ import mockit.MockUp;
  */
 public class TestXAttr extends FSXAttrBaseTest {
   static final Log LOG = LogFactory.getLog(TestXAttr.class);
+  private static int pathCount = 8; // work around. TODO, to be deleted
 
   private static final HBaseTestingUtility UTIL =
     GiraffaTestUtils.getHBaseTestingUtility();
@@ -79,6 +86,32 @@ public class TestXAttr extends FSXAttrBaseTest {
   private byte[] attrValue2;
   private byte[] attrValue3;
   private byte[] attrValue4;
+
+  private class MockMiniDFSCluster extends MiniDFSCluster {
+    MockDistributedFileSystem dfs;
+
+    public MockMiniDFSCluster(GiraffaFileSystem grfs) {
+      dfs = new MockDistributedFileSystem(grfs);
+    }
+
+    @Override
+    public DistributedFileSystem getFileSystem() throws IOException{
+      return dfs;
+    }
+  }
+
+  private class MockDistributedFileSystem extends DistributedFileSystem {
+    GiraffaFileSystem grfs;
+
+    public MockDistributedFileSystem(GiraffaFileSystem grfs) {
+      this.grfs = grfs;
+    }
+
+    @Override
+    public byte[] getXAttr(Path path, final String name) throws IOException {
+      return grfs.getXAttr(path, name);
+    }
+  }
 
   @BeforeClass
   public static void beforeClass() throws Exception {
@@ -101,8 +134,24 @@ public class TestXAttr extends FSXAttrBaseTest {
       void initFileSystem() throws Exception {
         // Do nothing.
       }
-
     };
+
+//    new MockUp<MiniDFSCluster>() {
+//      @Mock
+//      DistributedFileSystem getFileSystem() throws Exception{
+//        //return this.
+//        throw new IOException("in mock 1");
+//      }
+//    };
+
+//    new MockUp<DistributedFileSystem>() {
+//      @Mock
+//      byte[] getXAttr(Path path, final String name) throws Exception {
+//        return grfs.getXAttr(path, name);
+//        //throw new IOException("Say");
+//      }
+//    };
+
   }
 
   @Before
@@ -117,6 +166,7 @@ public class TestXAttr extends FSXAttrBaseTest {
     createFiles();
     initAttributes();
     fs = grfs;   // replace fs in FSXAttrBaseTest with grfs
+    dfsCluster = new MockMiniDFSCluster(grfs);
   }
 
   @After
@@ -582,7 +632,7 @@ public class TestXAttr extends FSXAttrBaseTest {
 //  public void testCanNotRemoveNonExistedAttr() throws IOException {
 //    grfs.removeXAttr(path1, attrName1);
 //  }
-//
+
 
   /**
    * Helper methods
@@ -625,20 +675,148 @@ public class TestXAttr extends FSXAttrBaseTest {
     new Random().nextBytes(attrValue4);
   }
 
-//  @Override // pass
-//  public void testCreateXAttr() throws Exception {
-//  }
+  @Override // pass
+  public void testCreateXAttr() throws Exception {
+  }
 
-//  @Override // pass
-//  public void testReplaceXAttr() throws Exception {}
+  @Override // pass
+  public void testReplaceXAttr() throws Exception {}
 
-//  @Override // pass
-//  public void testSetXAttr() throws Exception {
+  @Override // pass
+  public void testSetXAttr() throws Exception {
+
+  }
+
+//  @Override
+  public void testGetXAttrs() throws Exception {
+    FileSystem.mkdirs(this.fs, path, FsPermission.createImmutable((short)488));
+    this.fs.setXAttr(path, "user.a1", value1, EnumSet.of(XAttrSetFlag.CREATE));
+    this.fs.setXAttr(path, "user.a2", value2, EnumSet.of(XAttrSetFlag.CREATE));
+
+    byte[] user;
+    try {
+      user = this.fs.getXAttr(path, "user.a3");
+      Assert.fail("expected IOException");
+    } catch (IOException var11) {
+      GenericTestUtils.assertExceptionContains("At least one of the attributes provided was not found.", var11);
+    }
+
+    ArrayList user1 = Lists.newArrayList();
+    user1.add("user.a1");
+    user1.add("user.a2");
+    user1.add("user.a3");
+
+    try {
+      this.fs.getXAttrs(path, user1);
+      Assert.fail("expected IOException");
+    } catch (IOException var10) {
+      GenericTestUtils.assertExceptionContains("At least one of the attributes provided was not found.", var10);
+    }
+
+    this.fs.removeXAttr(path, "user.a1");
+    this.fs.removeXAttr(path, "user.a2");
+
+    try {
+      user = this.fs.getXAttr(path, "wackynamespace.foo");
+      Assert.fail("expected IOException");
+    } catch (Exception var9) {
+      GenericTestUtils.assertExceptionContains("An XAttr name must be prefixed with user/trusted/security/system, followed by a \'.\'", var9);
+    }
+
+    UserGroupInformation
+        user2 = UserGroupInformation.createUserForTesting("user", new String[]{"mygroup"});
+    this.fs.setXAttr(path, "trusted.foo", "1234".getBytes());
+
+    try {
+      user2.doAs(new PrivilegedExceptionAction() {
+        public Object run() throws Exception {
+          DistributedFileSystem
+              userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+          byte[] xattr = userFs.getXAttr(FSXAttrBaseTest.path, "trusted.foo");
+          return null;
+        }
+      });
+      Assert.fail("expected IOException");
+    } catch (IOException var8) {
+      GenericTestUtils.assertExceptionContains("User doesn\'t have permission", var8);
+    }
+
+//    this.fs.setXAttr(path, "user.a1", "1234".getBytes());
+//    this.fs.setPermission(path, new FsPermission((short)448));
 //
-//  }
+//    try {
+//      user2.doAs(new PrivilegedExceptionAction() {
+//        public Object run() throws Exception {
+//          DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+//          byte[] xattr = userFs.getXAttr(FSXAttrBaseTest.path, "user.a1");
+//          return null;
+//        }
+//      });
+//      Assert.fail("expected IOException");
+//    } catch (IOException var7) {
+//      GenericTestUtils.assertExceptionContains("Permission denied", var7);
+//    }
 
-  @Override
-  public void testGetXAttrs() throws Exception {}
+/*
+    final Path childDir = new Path(path, "child" + pathCount);
+    FileSystem.mkdirs(this.fs, childDir, FsPermission.createImmutable((short)448));
+    this.fs.setXAttr(childDir, "user.a1", "1234".getBytes());
+
+    try {
+      user2.doAs(new PrivilegedExceptionAction() {
+        public Object run() throws Exception {
+          DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+          userFs.getXAttr(childDir, "user.a1");
+          return null;
+        }
+      });
+      Assert.fail("expected IOException");
+    } catch (IOException var6) {
+      GenericTestUtils.assertExceptionContains("Permission denied", var6);
+    }
+
+    this.fs.setPermission(path, new FsPermission((short)452));
+
+    try {
+      user2.doAs(new PrivilegedExceptionAction() {
+        public Object run() throws Exception {
+          DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+          userFs.getXAttr(childDir, "user.a1");
+          return null;
+        }
+      });
+      Assert.fail("expected IOException");
+    } catch (IOException var5) {
+      GenericTestUtils.assertExceptionContains("Permission denied", var5);
+    }
+
+    this.fs.setPermission(path, new FsPermission((short)449));
+    this.fs.setPermission(childDir, new FsPermission((short)449));
+
+    try {
+      user2.doAs(new PrivilegedExceptionAction() {
+        public Object run() throws Exception {
+          DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+          userFs.getXAttr(childDir, "user.a1");
+          return null;
+        }
+      });
+      Assert.fail("expected IOException");
+    } catch (IOException var4) {
+      GenericTestUtils.assertExceptionContains("Permission denied", var4);
+    }
+
+    this.fs.setPermission(path, new FsPermission((short)449));
+    this.fs.setPermission(childDir, new FsPermission((short)452));
+    user2.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+        userFs.getXAttr(childDir, "user.a1");
+        return null;
+      }
+    });
+   */
+  }
 
   @Override
   public void testRemoveXAttr() throws Exception {}

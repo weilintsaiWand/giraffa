@@ -2,17 +2,29 @@ package org.apache.giraffa.hbase;
 
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_DEFAULT;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_KEY;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_SUPERUSERGROUP_DEFAULT;
+import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_SUPERUSERGROUP_KEY;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+
+import org.apache.giraffa.FSPermissionChecker;
 import org.apache.giraffa.INode;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.XAttr;
 import org.apache.hadoop.fs.XAttrSetFlag;
+import org.apache.hadoop.fs.permission.FsAction;
+import org.apache.hadoop.hbase.ipc.HBaseRpcUtil;
+import org.apache.hadoop.hdfs.XAttrHelper;
+import org.apache.hadoop.security.AccessControlException;
+import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -35,14 +47,24 @@ import java.util.List;
 public class XAttrOp {
   private INodeManager nodeManager;
   private int inodeXAttrsLimit;
+  private String fsOwnerShortUserName;
+  private String supergroup;
+  private boolean isPermissionEnabled;
 
-  public XAttrOp(INodeManager nodeManager, Configuration conf) {
+  public XAttrOp(INodeManager nodeManager, Configuration conf)
+      throws IOException{
     this.nodeManager = nodeManager;
     this.inodeXAttrsLimit = conf.getInt(DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY,
                             DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT);
     Preconditions.checkArgument(inodeXAttrsLimit >= 0,
        "Cannot set a negative limit on the number of xattrs per inode (%s).",
        DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY);
+    UserGroupInformation fsOwner = UserGroupInformation.getCurrentUser();
+    fsOwnerShortUserName = fsOwner.getShortUserName();
+    supergroup = conf.get(DFS_PERMISSIONS_SUPERUSERGROUP_KEY,
+                          DFS_PERMISSIONS_SUPERUSERGROUP_DEFAULT);
+    isPermissionEnabled = conf.getBoolean(DFS_PERMISSIONS_ENABLED_KEY,
+                                          DFS_PERMISSIONS_ENABLED_DEFAULT);
   }
 
   public void setXAttr(String src, XAttr xAttr, EnumSet<XAttrSetFlag> flag)
@@ -52,6 +74,7 @@ public class XAttrOp {
     }
 
     checkIfFileExisted(src);
+    FSPermissionChecker pc = getFsPermissionChecker();
 
     // TODO. Complete all permission checking
     // TODO. Think about what kind of permissions to be checked exactly
@@ -89,19 +112,19 @@ public class XAttrOp {
 
   public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs)
           throws IOException {
-    if (src == null || xAttrs == null) {
+    if (src == null) {
       throw new IllegalArgumentException("Argument is null");
     }
     checkIfFileExisted(src);
-    final boolean isGetAll =
-            (xAttrs == null || xAttrs.isEmpty()) ? true : false;
+    final boolean isGetAll = (xAttrs == null || xAttrs.isEmpty());
+    FSPermissionChecker pc = getFsPermissionChecker();
 
     // TODO some permission checking here
     //  1. RawPath checking
-    if (!isGetAll) {
-      // TODO check permission of input attr list : xAttr
+    if (!isGetAll && isPermissionEnabled) {
+      // TODO checkPermissionForApi(pc, xAttrs);
     }
-    // TODO: check if we have access permission to path src
+    checkPathAccess(src, pc,FsAction.READ);
 
     List<XAttr> oldXAttrList = nodeManager.getXAttrs(src);
     // TODO, filter oldXAttrList (filter out those with permission problems)
@@ -183,4 +206,48 @@ public class XAttrOp {
            xAttr.getNameSpace() == XAttr.NameSpace.TRUSTED;
   }
 
+  /**
+   *  copy from
+   *  {@link NamespaceProcessor#getFsPermissionChecker()}
+   */
+  private FSPermissionChecker getFsPermissionChecker() throws IOException {
+    UserGroupInformation ugi = HBaseRpcUtil.getRemoteUser();
+    return new FSPermissionChecker(fsOwnerShortUserName, supergroup, ugi);
+  }
+
+  /**
+   * copy from
+   * {@link org.apache.hadoop.hdfs.server.namenode.XAttrPermissionFilter}
+   */
+  private void checkPermissionForApi( FSPermissionChecker pc, XAttr xAttr)
+      throws AccessControlException {
+    if(xAttr.getNameSpace() != XAttr.NameSpace.USER &&
+       (xAttr.getNameSpace() != XAttr.NameSpace.TRUSTED || !pc.isSuperUser())) {
+      throw new AccessControlException("User doesn\'t have permission"
+         + " for xattr: " + XAttrHelper.getPrefixName(xAttr));
+    }
+  }
+
+  /**
+   * copy from
+   * {@link org.apache.hadoop.hdfs.server.namenode.XAttrPermissionFilter}
+   */
+  private void checkPermissionForApi(FSPermissionChecker pc, List<XAttr> xAttrs)
+      throws AccessControlException {
+    Preconditions.checkArgument(xAttrs != null);
+    if(!xAttrs.isEmpty()) {
+      Iterator i$ = xAttrs.iterator();
+
+      while(i$.hasNext()) {
+        XAttr xAttr = (XAttr)i$.next();
+        checkPermissionForApi(pc, xAttr);
+      }
+    }
+  }
+
+  private void checkPathAccess(String src, FSPermissionChecker pc,
+                               FsAction access) throws IOException{
+    INode iFile = nodeManager.getINode(src);
+    pc.check(iFile, access);
+  }
 }
