@@ -90,8 +90,11 @@ public class TestXAttr extends FSXAttrBaseTest {
   private class MockMiniDFSCluster extends MiniDFSCluster {
     MockDistributedFileSystem dfs;
 
-    public MockMiniDFSCluster(GiraffaFileSystem grfs) {
-      dfs = new MockDistributedFileSystem(grfs);
+//    public MockMiniDFSCluster(GiraffaFileSystem grfs) {
+//      dfs = new MockDistributedFileSystem(grfs);
+//    }
+    public MockMiniDFSCluster() {
+      dfs = new MockDistributedFileSystem();
     }
 
     @Override
@@ -101,15 +104,19 @@ public class TestXAttr extends FSXAttrBaseTest {
   }
 
   private class MockDistributedFileSystem extends DistributedFileSystem {
-    GiraffaFileSystem grfs;
-
-    public MockDistributedFileSystem(GiraffaFileSystem grfs) {
-      this.grfs = grfs;
-    }
+//    GiraffaFileSystem grfs;
+//
+//    public MockDistributedFileSystem(GiraffaFileSystem grfs) {
+//      this.grfs = grfs;
+//    }
 
     @Override
     public byte[] getXAttr(Path path, final String name) throws IOException {
-      return grfs.getXAttr(path, name);
+      GiraffaConfiguration tmpConf =
+          new GiraffaConfiguration(UTIL.getConfiguration());
+      GiraffaTestUtils.setGiraffaURI(tmpConf);
+      GiraffaFileSystem tmpGrfs = (GiraffaFileSystem) FileSystem.get(tmpConf);
+      return tmpGrfs.getXAttr(path, name);
     }
   }
 
@@ -166,11 +173,13 @@ public class TestXAttr extends FSXAttrBaseTest {
     createFiles();
     initAttributes();
     fs = grfs;   // replace fs in FSXAttrBaseTest with grfs
-    dfsCluster = new MockMiniDFSCluster(grfs);
+    /*MiniDFSCluster*/ dfsCluster = new  MockMiniDFSCluster();
+    //dfsCluster = new MockMiniDFSCluster(/*grfs*/);
   }
 
   @After
   public void after() throws IOException {
+    dfsCluster = null;
     IOUtils.cleanup(LOG, grfs);
   }
 
@@ -676,19 +685,17 @@ public class TestXAttr extends FSXAttrBaseTest {
   }
 
   @Override // pass
-  public void testCreateXAttr() throws Exception {
-  }
+  public void testCreateXAttr() throws Exception {}
 
   @Override // pass
   public void testReplaceXAttr() throws Exception {}
 
   @Override // pass
-  public void testSetXAttr() throws Exception {
+  public void testSetXAttr() throws Exception {}
 
-  }
-
-//  @Override
+  @Override
   public void testGetXAttrs() throws Exception {
+
     FileSystem.mkdirs(this.fs, path, FsPermission.createImmutable((short)488));
     this.fs.setXAttr(path, "user.a1", value1, EnumSet.of(XAttrSetFlag.CREATE));
     this.fs.setXAttr(path, "user.a2", value2, EnumSet.of(XAttrSetFlag.CREATE));
