@@ -748,21 +748,21 @@ public class TestXAttr extends FSXAttrBaseTest {
       GenericTestUtils.assertExceptionContains("User doesn\'t have permission", var8);
     }
 
-//    this.fs.setXAttr(path, "user.a1", "1234".getBytes());
-//    this.fs.setPermission(path, new FsPermission((short)448));
-//
-//    try {
-//      user2.doAs(new PrivilegedExceptionAction() {
-//        public Object run() throws Exception {
-//          DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
-//          byte[] xattr = userFs.getXAttr(FSXAttrBaseTest.path, "user.a1");
-//          return null;
-//        }
-//      });
-//      Assert.fail("expected IOException");
-//    } catch (IOException var7) {
-//      GenericTestUtils.assertExceptionContains("Permission denied", var7);
-//    }
+    this.fs.setXAttr(path, "user.a1", "1234".getBytes());
+    this.fs.setPermission(path, new FsPermission((short)448));
+
+    try {
+      user2.doAs(new PrivilegedExceptionAction() {
+        public Object run() throws Exception {
+          DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+          byte[] xattr = userFs.getXAttr(FSXAttrBaseTest.path, "user.a1");
+          return null;
+        }
+      });
+      Assert.fail("expected IOException");
+    } catch (IOException var7) {
+      GenericTestUtils.assertExceptionContains("Permission denied", var7);
+    }
 
 /*
     final Path childDir = new Path(path, "child" + pathCount);
