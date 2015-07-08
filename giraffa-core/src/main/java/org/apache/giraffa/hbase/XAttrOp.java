@@ -1,5 +1,6 @@
 package org.apache.giraffa.hbase;
 
+import static org.apache.giraffa.hbase.XAttrPermissionFilter.checkPermissionForApi;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_DEFAULT;
@@ -165,10 +166,9 @@ public class XAttrOp {
 
     checkIfFileExisted(src);
     if (isPermissionEnabled) {
-      checkParentAccess(pc, src, FsAction.WRITE);
+      checkParentAccess(pc, src, FsAction.EXECUTE);
     }
 
-    // TODO. more permission checking ?
     return nodeManager.getXAttrs(src);
     // TODO. permission checking ? Filter result list
   }
@@ -225,35 +225,34 @@ public class XAttrOp {
     return new FSPermissionChecker(fsOwnerShortUserName, supergroup, ugi);
   }
 
-  /**
-   * copy from
-   * {@link org.apache.hadoop.hdfs.server.namenode.XAttrPermissionFilter}
-   */
-  private void checkPermissionForApi( FSPermissionChecker pc, XAttr xAttr)
-      throws AccessControlException {
-    if(xAttr.getNameSpace() != XAttr.NameSpace.USER &&
-       (xAttr.getNameSpace() != XAttr.NameSpace.TRUSTED || !pc.isSuperUser())) {
-      throw new AccessControlException("User doesn\'t have permission"
-         + " for xattr: " + XAttrHelper.getPrefixName(xAttr));
-    }
-  }
-
-  /**
-   * copy from
-   * {@link org.apache.hadoop.hdfs.server.namenode.XAttrPermissionFilter}
-   */
-  private void checkPermissionForApi(FSPermissionChecker pc, List<XAttr> xAttrs)
-      throws AccessControlException {
-    Preconditions.checkArgument(xAttrs != null);
-    if(!xAttrs.isEmpty()) {
-      Iterator i$ = xAttrs.iterator();
-
-      while(i$.hasNext()) {
-        XAttr xAttr = (XAttr)i$.next();
-        checkPermissionForApi(pc, xAttr);
-      }
-    }
-  }
+//  /**
+//   * copy from
+//   * {@link org.apache.hadoop.hdfs.server.namenode.XAttrPermissionFilter}
+//   */
+//  private void checkPermissionForApi( FSPermissionChecker pc, XAttr xAttr)
+//      throws AccessControlException {
+//    if(xAttr.getNameSpace() != XAttr.NameSpace.USER &&
+//       (xAttr.getNameSpace() != XAttr.NameSpace.TRUSTED || !pc.isSuperUser())) {
+//      throw new AccessControlException("User doesn\'t have permission"
+//         + " for xattr: " + XAttrHelper.getPrefixName(xAttr));
+//    }
+//  }
+//
+//  /**
+//   * {@link org.apache.hadoop.hdfs.server.namenode.XAttrPermissionFilter}
+//   */
+//  private void checkPermissionForApi(FSPermissionChecker pc, List<XAttr> xAttrs)
+//      throws AccessControlException {
+//    Preconditions.checkArgument(xAttrs != null);
+//    if(!xAttrs.isEmpty()) {
+//      Iterator i$ = xAttrs.iterator();
+//
+//      while(i$.hasNext()) {
+//        XAttr xAttr = (XAttr)i$.next();
+//        checkPermissionForApi(pc, xAttr);
+//      }
+//    }
+//  }
 
   /**
    * derived from

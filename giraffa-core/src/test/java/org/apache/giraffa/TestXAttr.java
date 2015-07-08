@@ -742,37 +742,37 @@ public class TestXAttr extends FSXAttrBaseTest {
     }
 
     this.fs.setPermission(path, new FsPermission((short)450));
-//
-//    try {
-//      user.doAs(new PrivilegedExceptionAction() {
-//        public Object run() throws Exception {
-//          DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
-//          userFs.listXAttrs(childDir);
-//          return null;
-//        }
-//      });
-//      Assert.fail("expected IOException");
-//    } catch (IOException var6) {
-//      GenericTestUtils.assertExceptionContains("Permission denied", var6);
-//    }
-//
-//    this.fs.setPermission(path, new FsPermission((short)449));
-//    user.doAs(new PrivilegedExceptionAction() {
-//      public Object run() throws Exception {
-//        DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
-//        userFs.listXAttrs(childDir);
-//        return null;
-//      }
-//    });
-//    this.fs.setXAttr(childDir, "trusted.myxattr", "1234".getBytes());
-//    user.doAs(new PrivilegedExceptionAction() {
-//      public Object run() throws Exception {
-//        DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+
+    try {
+      user.doAs(new PrivilegedExceptionAction() {
+        public Object run() throws Exception {
+          DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+          userFs.listXAttrs(childDir);
+          return null;
+        }
+      });
+      Assert.fail("expected IOException");
+    } catch (IOException var6) {
+      GenericTestUtils.assertExceptionContains("Permission denied", var6);
+    }
+
+    this.fs.setPermission(path, new FsPermission((short)449));
+    user.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+        userFs.listXAttrs(childDir);
+        return null;
+      }
+    });
+    this.fs.setXAttr(childDir, "trusted.myxattr", "1234".getBytes());
+    user.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
 //        Assert.assertTrue(userFs.listXAttrs(childDir).size() == 1);
-//        return null;
-//      }
-//    });
-//    Assert.assertTrue(this.fs.listXAttrs(childDir).size() == 2);
+        return null;
+      }
+    });
+    //Assert.assertTrue(this.fs.listXAttrs(childDir).size() == 2);
   }
 
   @Override // pass
