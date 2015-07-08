@@ -1585,5 +1585,4 @@ public class NamespaceProcessor implements ClientProtocol,
   private static void assertNotRoot(String src) {
     assert !new Path(src).isRoot();
   }
-
 }
