@@ -1,20 +1,14 @@
 package org.apache.giraffa.hbase;
 
 import com.google.common.base.Preconditions;
-<<<<<<< HEAD
 import com.google.common.collect.Lists;
-=======
->>>>>>> 86ff6ca5c707e337fa814dcd02224ef486ab1c6f
 
 import org.apache.giraffa.FSPermissionChecker;
 import org.apache.hadoop.fs.XAttr;
 import org.apache.hadoop.hdfs.XAttrHelper;
 import org.apache.hadoop.security.AccessControlException;
 
-<<<<<<< HEAD
 import java.util.ArrayList;
-=======
->>>>>>> 86ff6ca5c707e337fa814dcd02224ef486ab1c6f
 import java.util.Iterator;
 import java.util.List;
 
@@ -48,7 +42,6 @@ public class XAttrPermissionFilter {
       }
     }
   }
-<<<<<<< HEAD
 
   static List<XAttr> filterXAttrsForApi(FSPermissionChecker pc,
                                         List<XAttr> xAttrs) {
@@ -73,6 +66,4 @@ public class XAttrPermissionFilter {
       return xAttrs;
     }
   }
-=======
->>>>>>> 86ff6ca5c707e337fa814dcd02224ef486ab1c6f
 }
