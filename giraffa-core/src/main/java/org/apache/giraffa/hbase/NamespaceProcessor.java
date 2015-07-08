@@ -1013,8 +1013,12 @@ public class NamespaceProcessor implements ClientProtocol,
     String src = srcKey.getPath();
     LOG.debug("Copying " + src + " to " + dst + " with rename flag");
     INode dstNode = srcNode.cloneWithNewRowKey(RowKeyFactory.newInstance(dst));
+    List<XAttr> xAttrs = nodeManager.getXAttrs(src);
     dstNode.setRenameState(RenameState.TRUE(srcKey.getKey()));
     nodeManager.updateINode(dstNode);
+    for (XAttr xattr : xAttrs) {
+      nodeManager.setXAttr(dst, xattr);
+    }
     return dstNode;
   }
 
