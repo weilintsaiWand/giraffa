@@ -118,6 +118,10 @@ public class TestXAttr extends FSXAttrBaseTest {
     public void removeXAttr(Path path, final String name) throws IOException {
       getFS().removeXAttr(path, name);
     }
+    @Override
+    public List<String> listXAttrs(Path path) throws IOException {
+      return getFS().listXAttrs(path);
+    }
   }
 
   @BeforeClass
@@ -664,7 +668,7 @@ public class TestXAttr extends FSXAttrBaseTest {
     attrValue4 = new byte[valueSize]; // randomly select a size
     new Random().nextBytes(attrValue4);
   }
-/*
+
   @Override // pass
   public void testCreateXAttr() throws Exception {}
 
@@ -682,14 +686,96 @@ public class TestXAttr extends FSXAttrBaseTest {
 
   @Override // pass
   public void testRemoveXAttrPermissions() throws Exception {}
-*/
-  @Override
-  public void testRenameFileWithXAttr() throws Exception {}
 
   @Override
-  public void testListXAttrs() throws Exception {}
+  public void testRenameFileWithXAttr() throws Exception {
+//    FileSystem.mkdirs(this.fs, path, FsPermission.createImmutable((short)488));
+//    this.fs.setXAttr(path, "user.a1", value1, EnumSet.of(XAttrSetFlag.CREATE));
+//    this.fs.setXAttr(path, "user.a2", value2, EnumSet.of(XAttrSetFlag.CREATE));
+//    Path renamePath = new Path(path.toString() + "-rename");
+//    this.fs.rename(path, renamePath);
+//    Map xattrs = this.fs.getXAttrs(renamePath);
+//    Assert.assertEquals((long)xattrs.size(), 2L);
+//    Assert.assertArrayEquals(value1, (byte[])xattrs.get("user.a1"));
+//    Assert.assertArrayEquals(value2, (byte[])xattrs.get("user.a2"));
+//    this.fs.removeXAttr(renamePath, "user.a1");
+//    this.fs.removeXAttr(renamePath, "user.a2");
+    // TODO, bugy
+  }
 
   @Override
+  public void testListXAttrs() throws Exception {
+    UserGroupInformation user = UserGroupInformation.createUserForTesting("user", new String[]{"mygroup"});
+
+    try {
+      this.fs.listXAttrs(path);
+      Assert.fail("expected FileNotFoundException");
+    } catch (FileNotFoundException var8) {
+      GenericTestUtils.assertExceptionContains("cannot find", var8);
+    }
+
+    FileSystem.mkdirs(this.fs, path, FsPermission.createImmutable((short)488));
+    List noXAttrs = this.fs.listXAttrs(path);
+    Assert.assertTrue("XAttrs were found?", noXAttrs.size() == 0);
+    this.fs.setXAttr(path, "user.a1", value1, EnumSet.of(XAttrSetFlag.CREATE));
+    this.fs.setXAttr(path, "user.a2", value2, EnumSet.of(XAttrSetFlag.CREATE));
+    List xattrNames = this.fs.listXAttrs(path);
+    Assert.assertTrue(xattrNames.contains("user.a1"));
+    Assert.assertTrue(xattrNames.contains("user.a2"));
+    Assert.assertTrue(xattrNames.size() == 2);
+    this.fs.setPermission(path, new FsPermission((short)452));
+    final Path childDir = new Path(path, "child" + pathCount);
+    FileSystem.mkdirs(this.fs, childDir, FsPermission.createImmutable((short)448));
+    this.fs.setXAttr(childDir, "user.a1", "1234".getBytes());
+
+    try {
+      user.doAs(new PrivilegedExceptionAction() {
+        public Object run() throws Exception {
+          DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+          userFs.listXAttrs(childDir);
+          return null;
+        }
+      });
+      Assert.fail("expected IOException");
+    } catch (IOException var7) {
+      GenericTestUtils.assertExceptionContains("Permission denied", var7);
+    }
+
+    this.fs.setPermission(path, new FsPermission((short)450));
+//
+//    try {
+//      user.doAs(new PrivilegedExceptionAction() {
+//        public Object run() throws Exception {
+//          DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+//          userFs.listXAttrs(childDir);
+//          return null;
+//        }
+//      });
+//      Assert.fail("expected IOException");
+//    } catch (IOException var6) {
+//      GenericTestUtils.assertExceptionContains("Permission denied", var6);
+//    }
+//
+//    this.fs.setPermission(path, new FsPermission((short)449));
+//    user.doAs(new PrivilegedExceptionAction() {
+//      public Object run() throws Exception {
+//        DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+//        userFs.listXAttrs(childDir);
+//        return null;
+//      }
+//    });
+//    this.fs.setXAttr(childDir, "trusted.myxattr", "1234".getBytes());
+//    user.doAs(new PrivilegedExceptionAction() {
+//      public Object run() throws Exception {
+//        DistributedFileSystem userFs = FSXAttrBaseTest.dfsCluster.getFileSystem();
+//        Assert.assertTrue(userFs.listXAttrs(childDir).size() == 1);
+//        return null;
+//      }
+//    });
+//    Assert.assertTrue(this.fs.listXAttrs(childDir).size() == 2);
+  }
+
+  @Override // pass
   public void testCleanupXAttrs() throws Exception {}
 
   @Override

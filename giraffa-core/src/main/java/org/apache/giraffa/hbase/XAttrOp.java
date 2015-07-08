@@ -121,11 +121,10 @@ public class XAttrOp {
     final boolean isGetAll = (xAttrs == null || xAttrs.isEmpty());
     FSPermissionChecker pc = getFsPermissionChecker();
 
-    // TODO some permission checking here
     if (!isGetAll && isPermissionEnabled) {
       checkPermissionForApi(pc, xAttrs);
     }
-    checkPathAccess(pc, src,FsAction.READ);
+    checkPathAccess(pc, src, FsAction.READ);
 
     List<XAttr> oldXAttrList = nodeManager.getXAttrs(src);
     // TODO, filter oldXAttrList (filter out those with permission problems)
@@ -162,8 +161,13 @@ public class XAttrOp {
     if (src == null) {
       throw new IllegalArgumentException("Argument is null");
     }
+    FSPermissionChecker pc = getFsPermissionChecker();
 
     checkIfFileExisted(src);
+    if (isPermissionEnabled) {
+      checkParentAccess(pc, src, FsAction.WRITE);
+    }
+
     // TODO. more permission checking ?
     return nodeManager.getXAttrs(src);
     // TODO. permission checking ? Filter result list
@@ -180,7 +184,6 @@ public class XAttrOp {
       checkPermissionForApi(pc, xAttr);
     }
 
-    // Check if change permission
     checkXAttrChangeAccess(src, xAttr, pc);
 
     // check if the attributes existed or not
@@ -199,7 +202,7 @@ public class XAttrOp {
   private INode checkIfFileExisted(String src) throws IOException {
     INode node = nodeManager.getINode(src);
     if (node == null) {
-      throw new FileNotFoundException("File does not exist: " + src);
+      throw new FileNotFoundException("cannot find " + src);
     }
     return node;
   }
@@ -265,6 +268,7 @@ public class XAttrOp {
           pc.checkOwner(node);
         }
       } else {
+        // No need parent Exec ?
         checkPathAccess(pc, src, FsAction.WRITE);
       }
     }
@@ -276,7 +280,18 @@ public class XAttrOp {
    */
   private void checkPathAccess(FSPermissionChecker pc, String src,
                                FsAction access) throws IOException{
-    INode iFile = nodeManager.getINode(src);
-    pc.check(iFile, access);
+    INode node = nodeManager.getINode(src);
+    pc.check(node, access);
   }
+
+  /**
+   * signature copy from
+   * {@link org.apache.hadoop.hdfs.server.namenode.FSNamesystem}
+   */
+  private void checkParentAccess(FSPermissionChecker pc, String src,
+                                 FsAction access) throws IOException{
+    INode node = nodeManager.getParentINode(src);
+    pc.check(node, access);
+  }
+
 }
