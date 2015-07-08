@@ -687,21 +687,8 @@ public class TestXAttr extends FSXAttrBaseTest {
   @Override // pass
   public void testRemoveXAttrPermissions() throws Exception {}
 
-  @Override
-  public void testRenameFileWithXAttr() throws Exception {
-//    FileSystem.mkdirs(this.fs, path, FsPermission.createImmutable((short)488));
-//    this.fs.setXAttr(path, "user.a1", value1, EnumSet.of(XAttrSetFlag.CREATE));
-//    this.fs.setXAttr(path, "user.a2", value2, EnumSet.of(XAttrSetFlag.CREATE));
-//    Path renamePath = new Path(path.toString() + "-rename");
-//    this.fs.rename(path, renamePath);
-//    Map xattrs = this.fs.getXAttrs(renamePath);
-//    Assert.assertEquals((long)xattrs.size(), 2L);
-//    Assert.assertArrayEquals(value1, (byte[])xattrs.get("user.a1"));
-//    Assert.assertArrayEquals(value2, (byte[])xattrs.get("user.a2"));
-//    this.fs.removeXAttr(renamePath, "user.a1");
-//    this.fs.removeXAttr(renamePath, "user.a2");
-    // TODO, bugy
-  }
+  @Override // pass
+  public void testRenameFileWithXAttr() throws Exception {}
 
   @Override
   public void testListXAttrs() throws Exception {
