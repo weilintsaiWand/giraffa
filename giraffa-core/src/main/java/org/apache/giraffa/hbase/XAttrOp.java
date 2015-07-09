@@ -236,8 +236,14 @@ public class XAttrOp {
           pc.checkOwner(node);
         }
       } else {
-        // TODO No need parent Exec ?
         checkPathAccess(pc, src, FsAction.WRITE);
+        // Please note in legacy code it does not check X permission on
+        // parent because the permission checking method will call
+        // checkTraverse() automatically to check whole path.
+        // However, in Giraffa, we need check parent manually since there's
+        // no checkTraverse()
+        // In addition, in Giraffa, we only check parent and don't
+        // care grandparent
         checkParentAccess(pc, src, FsAction.EXECUTE);
       }
     }

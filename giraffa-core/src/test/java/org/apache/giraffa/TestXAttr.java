@@ -722,8 +722,6 @@ public class TestXAttr extends FSXAttrBaseTest {
     return (GiraffaFileSystem) FileSystem.get(tmpConf);
   }
 
-
-
   public static void main(String[] args) throws Exception {
     TestXAttr test = new TestXAttr();
     GiraffaConfiguration conf =
