@@ -32,14 +32,18 @@ import org.apache.hadoop.fs.XAttrSetFlag;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.test.GenericTestUtils;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -47,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import static org.apache.hadoop.security.UserGroupInformation.createUserForTesting;
 import static org.apache.hadoop.fs.CreateFlag.CREATE;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTR_SIZE_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY;
@@ -95,13 +100,13 @@ public class TestXAttr extends FSXAttrBaseTest {
   }
 
   private class MockDistributedFileSystem extends DistributedFileSystem {
-    private GiraffaFileSystem getFS() throws IOException {
-      GiraffaConfiguration tmpConf =
-          new GiraffaConfiguration(UTIL.getConfiguration());
-      GiraffaTestUtils.setGiraffaURI(tmpConf);
-      return (GiraffaFileSystem) FileSystem.get(tmpConf);
+/*
+    @Override
+    public void setXAttr(Path path, String name, byte[] value)
+        throws IOException {
+      getFS().setXAttr(path, name, value);
     }
-
+*/
     @Override
     public byte[] getXAttr(Path path, final String name) throws IOException {
       return getFS().getXAttr(path, name);
@@ -165,6 +170,11 @@ public class TestXAttr extends FSXAttrBaseTest {
   @AfterClass
   public static void afterClass() throws Exception {
     UTIL.shutdownMiniCluster();
+  }
+
+  @Override
+  public void testXAttrAcl() throws Exception {
+    // does not support ACL related methods so replace old one with empty test
   }
 
   /**
@@ -621,20 +631,63 @@ public class TestXAttr extends FSXAttrBaseTest {
     grfs.removeXAttr(path1, attrName1);
   }
 
+  @Test
+  public void testCanNotRemoveXAttrWithoutParentDirXPermission() throws
+                                                                 Exception {
+
+    // need another user since default one is super user
+    UserGroupInformation user1 = createUserForTesting("user1",
+                                             new String[]{"mygroup"});
+    Path user1Root = new Path ("/user/user1");
+    fs.mkdirs(user1Root);
+    fs.setOwner(user1Root, "user1", "mygroup");
+
+    try {
+      user1.doAs(new PrivilegedExceptionAction() {
+        public Object run() throws Exception {
+          GiraffaFileSystem userFs = getFS();
+          final Path path1 = new Path("aaa/bbb/ccc");
+          short permissionVal = 488;
+          FSDataOutputStream fsOutStream = userFs.create(path1,
+            new FsPermission(permissionVal), EnumSet.of(CREATE), 4096,
+            (short)3, 512, null);
+          fsOutStream.close();
+
+          Path path1Parent = new Path("aaa/bbb");
+          userFs.setXAttr(path1, attrName1, attrValue1);
+
+          // remove parent node's X permission
+          userFs.setPermission(path1Parent,
+                               FsPermission.createImmutable((short) 384));
+
+          userFs.removeXAttr(path1, attrName1);
+          return null;
+        }
+      });
+
+      Assert.fail("expected IOException");
+    } catch (IOException e) {
+      GenericTestUtils.assertExceptionContains("Permission denied", e);
+    }
+
+    assertEquals(1, fs.listXAttrs(new Path("/user/user1/aaa/bbb/ccc")).size());
+  }
+
   /**
    * Helper methods
    */
   private void createFiles() throws IOException {
+    final short permissionVal = 480; // 740
     // file 1
     path1 = new Path("aaa/bbb/ccc");
     FSDataOutputStream fsOutStream = grfs.create(path1,
-            new FsPermission((short)416), EnumSet.of(CREATE), 4096, (short)3,
+            new FsPermission(permissionVal), EnumSet.of(CREATE), 4096, (short)3,
             512, null);
     fsOutStream.close();
 
     // file 2
     path2 = new Path("aaa/bbb/ddd");
-    fsOutStream = grfs.create(path2, new FsPermission((short)416),
+    fsOutStream = grfs.create(path2, new FsPermission(permissionVal),
             EnumSet.of(CREATE), 4096, (short)3, 512, null);
     fsOutStream.close();
 
@@ -662,10 +715,14 @@ public class TestXAttr extends FSXAttrBaseTest {
     new Random().nextBytes(attrValue4);
   }
 
-  @Override
-  public void testXAttrAcl() throws Exception {
-    // does not support ACL related methods so replace old one with empty test
+  private GiraffaFileSystem getFS() throws IOException {
+    GiraffaConfiguration tmpConf =
+        new GiraffaConfiguration(UTIL.getConfiguration());
+    GiraffaTestUtils.setGiraffaURI(tmpConf);
+    return (GiraffaFileSystem) FileSystem.get(tmpConf);
   }
+
+
 
   public static void main(String[] args) throws Exception {
     TestXAttr test = new TestXAttr();

@@ -109,7 +109,7 @@ public class XAttrOp {
                             + " would exceed limit of " + inodeXAttrsLimit);
     }
 
-    nodeManager.setXAttr(src, xAttr); // TODO, merge to updateINode
+    nodeManager.setXAttr(src, xAttr);
   }
 
   public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs)
@@ -194,7 +194,7 @@ public class XAttrOp {
         "No matching attributes found for remove operation");
     }
 
-    nodeManager.removeXAttr(src, xAttr); // TODO, merge to updateINode
+    nodeManager.removeXAttr(src, xAttr);
   }
 
   private INode checkIfFileExisted(String src) throws IOException {
@@ -238,6 +238,7 @@ public class XAttrOp {
       } else {
         // TODO No need parent Exec ?
         checkPathAccess(pc, src, FsAction.WRITE);
+        checkParentAccess(pc, src, FsAction.EXECUTE);
       }
     }
   }
