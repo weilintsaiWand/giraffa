@@ -85,6 +85,8 @@ public class TestXAttr extends FSXAttrBaseTest {
   private byte[] attrValue2;
   private byte[] attrValue3;
   private byte[] attrValue4;
+  // need another user since default one is super user
+  private UserGroupInformation user1;
 
   private class MockMiniDFSCluster extends MiniDFSCluster {
     private MockDistributedFileSystem dfs;
@@ -156,6 +158,7 @@ public class TestXAttr extends FSXAttrBaseTest {
     grfs = (GiraffaFileSystem) FileSystem.get(conf);
 
     createFiles();
+    setupForOtherUsers();
     initAttributes();
     fs = grfs;   // replace fs in FSXAttrBaseTest with grfs
     dfsCluster = new  MockMiniDFSCluster(); //
@@ -631,32 +634,24 @@ public class TestXAttr extends FSXAttrBaseTest {
     grfs.removeXAttr(path1, attrName1);
   }
 
+
+  /**
+   * permission related Tests
+   */
   @Test
-  public void testCanNotRemoveXAttrWithoutParentDirXPermission() throws
-                                                                 Exception {
-
-    // need another user since default one is super user
-    UserGroupInformation user1 = createUserForTesting("user1",
-                                             new String[]{"mygroup"});
-    Path user1Root = new Path ("/user/user1");
-    fs.mkdirs(user1Root);
-    fs.setOwner(user1Root, "user1", "mygroup");
-
+  public void testCanNotRemoveXAttrWithoutParentXPermission() throws Exception {
     try {
       user1.doAs(new PrivilegedExceptionAction() {
         public Object run() throws Exception {
           GiraffaFileSystem userFs = getFS();
-          final Path path1 = new Path("aaa/bbb/ccc");
-          short permissionVal = 488;
           FSDataOutputStream fsOutStream = userFs.create(path1,
-            new FsPermission(permissionVal), EnumSet.of(CREATE), 4096,
+            new FsPermission((short)488), EnumSet.of(CREATE), 4096,
             (short)3, 512, null);
           fsOutStream.close();
-
-          Path path1Parent = new Path("aaa/bbb");
           userFs.setXAttr(path1, attrName1, attrValue1);
 
           // remove parent node's X permission
+          Path path1Parent = new Path("aaa/bbb");
           userFs.setPermission(path1Parent,
                                FsPermission.createImmutable((short) 384));
 
@@ -670,7 +665,7 @@ public class TestXAttr extends FSXAttrBaseTest {
       GenericTestUtils.assertExceptionContains("Permission denied", e);
     }
 
-    assertEquals(1, fs.listXAttrs(new Path("/user/user1/aaa/bbb/ccc")).size());
+    assertEquals(1, grfs.listXAttrs(new Path("/user/user1/aaa/bbb/ccc")).size());
   }
 
   /**
@@ -713,6 +708,13 @@ public class TestXAttr extends FSXAttrBaseTest {
     attrName4 = "user.attr4";    // there's naming rule
     attrValue4 = new byte[valueSize]; // randomly select a size
     new Random().nextBytes(attrValue4);
+  }
+
+  private void setupForOtherUsers() throws IOException {
+    user1 = createUserForTesting("user1", new String[]{"mygroup"});
+    Path user1Root = new Path ("/user/user1");
+    grfs.mkdirs(user1Root);
+    grfs.setOwner(user1Root, "user1", "mygroup");
   }
 
   private GiraffaFileSystem getFS() throws IOException {
