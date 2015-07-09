@@ -1,6 +1,7 @@
 package org.apache.giraffa.hbase;
 
 import static org.apache.giraffa.hbase.XAttrPermissionFilter.checkPermissionForApi;
+import static org.apache.giraffa.hbase.XAttrPermissionFilter.filterXAttrsForApi;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_DEFAULT;
@@ -18,14 +19,11 @@ import org.apache.hadoop.fs.XAttr;
 import org.apache.hadoop.fs.XAttrSetFlag;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.hbase.ipc.HBaseRpcUtil;
-import org.apache.hadoop.hdfs.XAttrHelper;
-import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -38,12 +36,13 @@ import java.util.List;
  * Candidate of permission to check
  * (V) 1. Check if XAttribute feature is enable
  *    (Checked in NamespaceProcessor)
- * 2. Check for XAttribute permission (system/user)
+ * (V) 2. Check for XAttribute permission (system/user)
  * 3. Check for path permission (do we have write permission on specific path)
  * 4. Check for file system permission (does anyone blocking the file system?)
  *    readlock/write lock
  * (V) 5. validate if flag is valid
- * (V) 6. Check attribute size (max len of name)
+ * (V) 6. Check attribute size (max len of name and value)
+ *    (Checked in NamespaceProcessor)
  * (V) 7. check if exceed limit size of attr for given node
  * 8. Check if raw path
  */
@@ -169,8 +168,7 @@ public class XAttrOp {
       checkParentAccess(pc, src, FsAction.EXECUTE);
     }
 
-    return nodeManager.getXAttrs(src);
-    // TODO. permission checking ? Filter result list
+    return filterXAttrsForApi(pc, nodeManager.getXAttrs(src));
   }
 
   public void removeXAttr(String src, XAttr xAttr) throws IOException {
@@ -225,35 +223,6 @@ public class XAttrOp {
     return new FSPermissionChecker(fsOwnerShortUserName, supergroup, ugi);
   }
 
-//  /**
-//   * copy from
-//   * {@link org.apache.hadoop.hdfs.server.namenode.XAttrPermissionFilter}
-//   */
-//  private void checkPermissionForApi( FSPermissionChecker pc, XAttr xAttr)
-//      throws AccessControlException {
-//    if(xAttr.getNameSpace() != XAttr.NameSpace.USER &&
-//       (xAttr.getNameSpace() != XAttr.NameSpace.TRUSTED || !pc.isSuperUser())) {
-//      throw new AccessControlException("User doesn\'t have permission"
-//         + " for xattr: " + XAttrHelper.getPrefixName(xAttr));
-//    }
-//  }
-//
-//  /**
-//   * {@link org.apache.hadoop.hdfs.server.namenode.XAttrPermissionFilter}
-//   */
-//  private void checkPermissionForApi(FSPermissionChecker pc, List<XAttr> xAttrs)
-//      throws AccessControlException {
-//    Preconditions.checkArgument(xAttrs != null);
-//    if(!xAttrs.isEmpty()) {
-//      Iterator i$ = xAttrs.iterator();
-//
-//      while(i$.hasNext()) {
-//        XAttr xAttr = (XAttr)i$.next();
-//        checkPermissionForApi(pc, xAttr);
-//      }
-//    }
-//  }
-
   /**
    * derived from
    * {@link org.apache.hadoop.hdfs.server.namenode.FSNamesystem}
@@ -267,7 +236,7 @@ public class XAttrOp {
           pc.checkOwner(node);
         }
       } else {
-        // No need parent Exec ?
+        // TODO No need parent Exec ?
         checkPathAccess(pc, src, FsAction.WRITE);
       }
     }
@@ -292,5 +261,4 @@ public class XAttrOp {
     INode node = nodeManager.getParentINode(src);
     pc.check(node, access);
   }
-
 }
