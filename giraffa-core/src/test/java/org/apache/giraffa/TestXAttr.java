@@ -717,6 +717,27 @@ public class TestXAttr extends FSXAttrBaseTest {
   }
 
   @Test
+  public void testCanNotSetXAttrWithoutWPermission() throws Exception {
+    user1.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        GiraffaFileSystem userFs = getFS();
+        createEmptyFile(userFs, path1);
+        userFs.setPermission(path1,
+                             FsPermission.createImmutable((short) 352));
+        try {
+          userFs.setXAttr(path1, attrName1, attrValue1);
+          Assert.fail("expected IOException");
+        } catch (IOException e) {
+          GenericTestUtils.assertExceptionContains("Permission denied", e);
+        }
+
+        return null;
+      }
+    });
+    assertEquals(0, grfs.listXAttrs(user1Path).size());
+  }
+
+  @Test
   public void testOnlySuperUserCanGetTRUSTEDXAttr() throws Exception {
     user1.doAs(new PrivilegedExceptionAction() {
       public Object run() throws Exception {
