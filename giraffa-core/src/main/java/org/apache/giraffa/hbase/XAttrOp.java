@@ -27,8 +27,6 @@ import java.util.EnumSet;
 import java.util.List;
 
 /**
- * TODO. This is temp version so the java doc will write later
- * Handle all detail operations logic
  * Do the similar thing as
  * {@link org.apache.hadoop.hdfs.server.namenode.XAttrStorage}
  * but not the same
@@ -37,7 +35,7 @@ import java.util.List;
  * (V) 1. Check if XAttribute feature is enable
  *    (Checked in NamespaceProcessor)
  * (V) 2. Check for XAttribute permission (system/user)
- * 3. Check for path permission (do we have write permission on specific path)
+ * (V) 3. Check for path permission (do we have write permission on specific path)
  * 4. Check for file system permission (does anyone blocking the file system?)
  *    readlock/write lock
  * (V) 5. validate if flag is valid
