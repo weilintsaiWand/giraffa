@@ -657,7 +657,7 @@ public class TestXAttr extends FSXAttrBaseTest {
   }
 
   @Test
-  public void testNoUserCanGetTRUSTEDXAttr() throws Exception {
+  public void testNoUserCanGetUnvisibleXAttr() throws Exception {
     user1.doAs(new PrivilegedExceptionAction() {
       public Object run() throws Exception {
         GiraffaFileSystem userFs = getFS();
