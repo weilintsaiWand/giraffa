@@ -42,7 +42,7 @@ import java.util.List;
  * (V) 6. Check attribute size (max len of name and value)
  *    (Checked in NamespaceProcessor)
  * (V) 7. check if exceed limit size of attr for given node
- * 8. Check if raw path
+ * 8. Check if save mode( we don't have safe mode, right?)
  */
 public class XAttrOp {
   private INodeManager nodeManager;

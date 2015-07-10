@@ -760,20 +760,31 @@ public class TestXAttr extends FSXAttrBaseTest {
     assertEquals(0, grfs.listXAttrs(user1Path).size());
   }
 
+
   @Test
-  public void testOnlySuperUserCanGetTRUSTEDXAttr() throws Exception {
+  public void testOnlySuperUserCanGetOrListTRUSTEDXAttr() throws Exception {
     user1.doAs(new PrivilegedExceptionAction() {
       public Object run() throws Exception {
         GiraffaFileSystem userFs = getFS();
         createEmptyFile(userFs, path1);
-
         userFs.setXAttr(path1, attrName1, attrValue1);
-        userFs.setXAttr(path1, "trusted.a1", attrValue2);
-
         assertEquals(1, userFs.getXAttrs(path1).size());
+        assertEquals(1, userFs.listXAttrs(path1).size());
         return null;
       }
     });
+    // use super user to set trusted xattr
+    grfs.setXAttr(user1Path, "trusted.a1", attrValue2);
+
+    user1.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        assertEquals(1, getFS().getXAttrs(path1).size());
+        assertEquals(1, getFS().listXAttrs(path1).size());
+        return null;
+      }
+    });
+
+    assertEquals(2, grfs.getXAttrs(user1Path).size());
     assertEquals(2, grfs.listXAttrs(user1Path).size());
   }
 
