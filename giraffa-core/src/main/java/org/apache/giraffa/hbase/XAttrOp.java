@@ -77,9 +77,7 @@ public class XAttrOp {
 
     checkIfFileExisted(src);
     FSPermissionChecker pc = getFsPermissionChecker();
-
-    // TODO. Complete all permission checking
-    // do the permission checking.
+    checkXAttrChangeAccess(src, xAttr, pc);
     checkPermissionForApi(pc, xAttr);
 
     // check if we can overwrite/ exceed attr numbers limit of a file

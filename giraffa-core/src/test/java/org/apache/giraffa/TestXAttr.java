@@ -735,13 +735,35 @@ public class TestXAttr extends FSXAttrBaseTest {
   }
 
   @Test
+  public void testCanNotRemoveXAttrWithoutWPermission() throws Exception {
+    try {
+      user1.doAs(new PrivilegedExceptionAction() {
+        public Object run() throws Exception {
+          GiraffaFileSystem userFs = getFS();
+          createEmptyFile(userFs, path1);
+          userFs.setXAttr(path1, attrName1, attrValue1);
+          userFs.setPermission(path1,
+                               FsPermission.createImmutable((short) 352));
+
+          userFs.removeXAttr(path1, attrName1);
+          return null;
+        }
+      });
+      Assert.fail("expected IOException");
+    } catch (IOException e) {
+      GenericTestUtils.assertExceptionContains("Permission denied", e);
+    }
+
+    assertEquals(1, grfs.listXAttrs(user1Path).size());
+  }
+
+  @Test
   public void testCanNotRemoveXAttrWithoutParentXPermission() throws Exception {
     try {
       user1.doAs(new PrivilegedExceptionAction() {
         public Object run() throws Exception {
           GiraffaFileSystem userFs = getFS();
           createEmptyFile(userFs, path1);
-
           userFs.setXAttr(path1, attrName1, attrValue1);
 
           // remove parent node's X permission
@@ -753,7 +775,6 @@ public class TestXAttr extends FSXAttrBaseTest {
           return null;
         }
       });
-
       Assert.fail("expected IOException");
     } catch (IOException e) {
       GenericTestUtils.assertExceptionContains("Permission denied", e);
