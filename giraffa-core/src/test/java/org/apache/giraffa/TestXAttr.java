@@ -727,7 +727,6 @@ public class TestXAttr extends FSXAttrBaseTest {
         userFs.setXAttr(path1, "trusted.a1", attrValue2);
 
         assertEquals(1, userFs.getXAttrs(path1).size());
-
         return null;
       }
     });
@@ -736,50 +735,47 @@ public class TestXAttr extends FSXAttrBaseTest {
 
   @Test
   public void testCanNotRemoveXAttrWithoutWPermission() throws Exception {
-    try {
-      user1.doAs(new PrivilegedExceptionAction() {
-        public Object run() throws Exception {
-          GiraffaFileSystem userFs = getFS();
-          createEmptyFile(userFs, path1);
-          userFs.setXAttr(path1, attrName1, attrValue1);
-          userFs.setPermission(path1,
-                               FsPermission.createImmutable((short) 352));
-
+    user1.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        GiraffaFileSystem userFs = getFS();
+        createEmptyFile(userFs, path1);
+        userFs.setXAttr(path1, attrName1, attrValue1);
+        userFs.setPermission(path1,
+                             FsPermission.createImmutable((short) 352));
+        try {
           userFs.removeXAttr(path1, attrName1);
-          return null;
+          Assert.fail("expected IOException");
+        } catch (IOException e) {
+          GenericTestUtils.assertExceptionContains("Permission denied", e);
         }
-      });
-      Assert.fail("expected IOException");
-    } catch (IOException e) {
-      GenericTestUtils.assertExceptionContains("Permission denied", e);
-    }
 
+        return null;
+      }
+    });
     assertEquals(1, grfs.listXAttrs(user1Path).size());
   }
 
   @Test
   public void testCanNotRemoveXAttrWithoutParentXPermission() throws Exception {
-    try {
-      user1.doAs(new PrivilegedExceptionAction() {
-        public Object run() throws Exception {
-          GiraffaFileSystem userFs = getFS();
-          createEmptyFile(userFs, path1);
-          userFs.setXAttr(path1, attrName1, attrValue1);
+    user1.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        GiraffaFileSystem userFs = getFS();
+        createEmptyFile(userFs, path1);
+        userFs.setXAttr(path1, attrName1, attrValue1);
 
-          // remove parent node's X permission
-          Path path1Parent = new Path("aaa/bbb");
-          userFs.setPermission(path1Parent,
-                               FsPermission.createImmutable((short) 384));
-
+        // remove parent node's X permission
+        Path path1Parent = new Path("aaa/bbb");
+        userFs.setPermission(path1Parent,
+                             FsPermission.createImmutable((short) 384));
+        try {
           userFs.removeXAttr(path1, attrName1);
-          return null;
+          Assert.fail("expected IOException");
+        } catch (IOException e) {
+          GenericTestUtils.assertExceptionContains("Permission denied", e);
         }
-      });
-      Assert.fail("expected IOException");
-    } catch (IOException e) {
-      GenericTestUtils.assertExceptionContains("Permission denied", e);
-    }
-
+        return null;
+      }
+    });
     assertEquals(1, grfs.listXAttrs(user1Path).size());
   }
 
