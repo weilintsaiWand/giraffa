@@ -87,6 +87,7 @@ public class TestXAttr extends FSXAttrBaseTest {
   private byte[] attrValue4;
   // need another user since default one is super user
   private UserGroupInformation user1;
+  private Path user1Path;
 
   private class MockMiniDFSCluster extends MiniDFSCluster {
     private MockDistributedFileSystem dfs;
@@ -634,29 +635,62 @@ public class TestXAttr extends FSXAttrBaseTest {
     grfs.removeXAttr(path1, attrName1);
   }
 
-
   /**
    * permission related Tests
    */
+  @Test
+  public void testOnlySuperUserCanGetTRUSTEDXAttr() throws Exception {
+    user1.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        GiraffaFileSystem userFs = getFS();
+        createEmptyFile(userFs, path1);
+
+        userFs.setXAttr(path1, attrName1, attrValue1);
+        userFs.setXAttr(path1, "trusted.a1", attrValue2);
+
+        assertEquals(1, userFs.getXAttrs(path1).size());
+
+        return null;
+      }
+    });
+    assertEquals(2, grfs.listXAttrs(user1Path).size());
+  }
+
+  @Test
+  public void testNoUserCanGetTRUSTEDXAttr() throws Exception {
+    user1.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        GiraffaFileSystem userFs = getFS();
+        createEmptyFile(userFs, path1);
+
+        userFs.setXAttr(path1, "security.a1", attrValue1);
+        userFs.setXAttr(path1, "system.a2", attrValue2);
+
+        assertEquals(0, userFs.getXAttrs(path1).size());
+
+        return null;
+      }
+    });
+    assertEquals(0, grfs.listXAttrs(user1Path).size());
+  }
+
   @Test
   public void testCanNotRemoveXAttrWithoutParentXPermission() throws Exception {
     try {
       user1.doAs(new PrivilegedExceptionAction() {
         public Object run() throws Exception {
-          GiraffaFileSystem userFs = getFS();
-          FSDataOutputStream fsOutStream = userFs.create(path1,
-            new FsPermission((short)488), EnumSet.of(CREATE), 4096,
-            (short)3, 512, null);
-          fsOutStream.close();
-          userFs.setXAttr(path1, attrName1, attrValue1);
+        GiraffaFileSystem userFs = getFS();
+        createEmptyFile(userFs, path1);
 
-          // remove parent node's X permission
-          Path path1Parent = new Path("aaa/bbb");
-          userFs.setPermission(path1Parent,
-                               FsPermission.createImmutable((short) 384));
+        userFs.setXAttr(path1, attrName1, attrValue1);
 
-          userFs.removeXAttr(path1, attrName1);
-          return null;
+        // remove parent node's X permission
+        Path path1Parent = new Path("aaa/bbb");
+        userFs.setPermission(path1Parent,
+                             FsPermission.createImmutable((short) 384));
+
+        userFs.removeXAttr(path1, attrName1);
+        return null;
         }
       });
 
@@ -665,7 +699,7 @@ public class TestXAttr extends FSXAttrBaseTest {
       GenericTestUtils.assertExceptionContains("Permission denied", e);
     }
 
-    assertEquals(1, grfs.listXAttrs(new Path("/user/user1/aaa/bbb/ccc")).size());
+    assertEquals(1, grfs.listXAttrs(user1Path).size());
   }
 
   /**
@@ -675,19 +709,22 @@ public class TestXAttr extends FSXAttrBaseTest {
     final short permissionVal = 480; // 740
     // file 1
     path1 = new Path("aaa/bbb/ccc");
-    FSDataOutputStream fsOutStream = grfs.create(path1,
-            new FsPermission(permissionVal), EnumSet.of(CREATE), 4096, (short)3,
-            512, null);
-    fsOutStream.close();
+    createEmptyFile(grfs, path1);
 
     // file 2
     path2 = new Path("aaa/bbb/ddd");
-    fsOutStream = grfs.create(path2, new FsPermission(permissionVal),
-            EnumSet.of(CREATE), 4096, (short)3, 512, null);
-    fsOutStream.close();
+    createEmptyFile(grfs, path2);
 
     // non-existed file
     noThisPath = new Path("noThisFile");
+  }
+
+  private void createEmptyFile(FileSystem fs, Path path) throws IOException {
+    final short permissionVal = 480; // 740
+    FSDataOutputStream fsOutStream = fs.create(path,
+                   new FsPermission(permissionVal), EnumSet.of(CREATE),
+                                                 4096, (short)3, 512, null);
+    fsOutStream.close();
   }
 
   private void initAttributes() {
@@ -712,6 +749,7 @@ public class TestXAttr extends FSXAttrBaseTest {
 
   private void setupForOtherUsers() throws IOException {
     user1 = createUserForTesting("user1", new String[]{"mygroup"});
+    user1Path = new Path("/user/user1/" + path1.toUri().getPath());
     Path user1Root = new Path ("/user/user1");
     grfs.mkdirs(user1Root);
     grfs.setOwner(user1Root, "user1", "mygroup");

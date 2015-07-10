@@ -127,7 +127,7 @@ public class XAttrOp {
     checkPathAccess(pc, src, FsAction.READ);
 
     List<XAttr> oldXAttrList = nodeManager.getXAttrs(src);
-    // TODO, filter oldXAttrList (filter out those with permission problems)
+    oldXAttrList = filterXAttrsForApi(pc, oldXAttrList);
 
     if (isGetAll) {
       return oldXAttrList;
@@ -215,8 +215,8 @@ public class XAttrOp {
   }
 
   /**
-   *  copy from
-   *  {@link NamespaceProcessor#getFsPermissionChecker()}
+   * copy from
+   * {@link NamespaceProcessor#getFsPermissionChecker()}
    */
   private FSPermissionChecker getFsPermissionChecker() throws IOException {
     UserGroupInformation ugi = HBaseRpcUtil.getRemoteUser();
