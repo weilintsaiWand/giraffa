@@ -1559,7 +1559,7 @@ public class NamespaceProcessor implements ClientProtocol,
     if(!this.xattrsEnabled) {
       throw new IOException(String.format("The XAttr operation has been "
        + "rejected.  Support for XAttrs has been disabled by setting %s to"
-       + " false.", new Object[]{"dfs.namenode.xattrs.enabled"}));
+       + " false.", DFS_NAMENODE_XATTRS_ENABLED_KEY));
     }
   }
 
