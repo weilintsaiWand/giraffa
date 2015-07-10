@@ -689,6 +689,34 @@ public class TestXAttr extends FSXAttrBaseTest {
   }
 
   @Test
+  public void testNoUserCanSetSECURITYAttr() throws Exception {
+    try {
+      grfs.setXAttr(path2, "security.a2", attrValue2);
+      Assert.fail("expected IOException");
+    } catch (IOException e) {
+      GenericTestUtils.
+          assertExceptionContains("User doesn\'t have permission", e);
+    }
+    assertEquals(0, grfs.listXAttrs(path2).size());
+
+    user1.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        GiraffaFileSystem userFs = getFS();
+        createEmptyFile(userFs, path1);
+        try {
+          userFs.setXAttr(path1, "security.a1", attrValue1);
+          Assert.fail("expected IOException");
+        } catch (IOException e) {
+          GenericTestUtils.
+              assertExceptionContains("User doesn\'t have permission", e);
+        }
+        assertEquals(0, userFs.listXAttrs(path1).size());
+        return null;
+      }
+    });
+  }
+
+  @Test
   public void testOnlySuperUserCanGetTRUSTEDXAttr() throws Exception {
     user1.doAs(new PrivilegedExceptionAction() {
       public Object run() throws Exception {
@@ -706,42 +734,23 @@ public class TestXAttr extends FSXAttrBaseTest {
     assertEquals(2, grfs.listXAttrs(user1Path).size());
   }
 
-/*
-  @Test
-  public void testNoUserCanGetUnvisibleXAttr() throws Exception {
-    user1.doAs(new PrivilegedExceptionAction() {
-      public Object run() throws Exception {
-        GiraffaFileSystem userFs = getFS();
-        createEmptyFile(userFs, path1);
-
-        userFs.setXAttr(path1, "security.a1", attrValue1);
-        userFs.setXAttr(path1, "system.a2", attrValue2);
-
-        assertEquals(0, userFs.getXAttrs(path1).size());
-
-        return null;
-      }
-    });
-    assertEquals(0, grfs.listXAttrs(user1Path).size());
-  }
-*/
   @Test
   public void testCanNotRemoveXAttrWithoutParentXPermission() throws Exception {
     try {
       user1.doAs(new PrivilegedExceptionAction() {
         public Object run() throws Exception {
-        GiraffaFileSystem userFs = getFS();
-        createEmptyFile(userFs, path1);
+          GiraffaFileSystem userFs = getFS();
+          createEmptyFile(userFs, path1);
 
-        userFs.setXAttr(path1, attrName1, attrValue1);
+          userFs.setXAttr(path1, attrName1, attrValue1);
 
-        // remove parent node's X permission
-        Path path1Parent = new Path("aaa/bbb");
-        userFs.setPermission(path1Parent,
-                             FsPermission.createImmutable((short) 384));
+          // remove parent node's X permission
+          Path path1Parent = new Path("aaa/bbb");
+          userFs.setPermission(path1Parent,
+                               FsPermission.createImmutable((short) 384));
 
-        userFs.removeXAttr(path1, attrName1);
-        return null;
+          userFs.removeXAttr(path1, attrName1);
+          return null;
         }
       });
 
