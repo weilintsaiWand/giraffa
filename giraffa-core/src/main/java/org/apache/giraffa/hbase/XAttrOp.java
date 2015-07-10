@@ -30,19 +30,6 @@ import java.util.List;
  * Do the similar thing as
  * {@link org.apache.hadoop.hdfs.server.namenode.XAttrStorage}
  * but not the same
- *
- * Candidate of permission to check
- * (V) 1. Check if XAttribute feature is enable
- *    (Checked in NamespaceProcessor)
- * (V) 2. Check for XAttribute permission (system/user)
- * (V) 3. Check for path permission (do we have write permission on specific path)
- * 4. Check for file system permission (does anyone blocking the file system?)
- *    readlock/write lock
- * (V) 5. validate if flag is valid
- * (V) 6. Check attribute size (max len of name and value)
- *    (Checked in NamespaceProcessor)
- * (V) 7. check if exceed limit size of attr for given node
- * 8. Check if save mode( we don't have safe mode, right?)
  */
 public class XAttrOp {
   private INodeManager nodeManager;
