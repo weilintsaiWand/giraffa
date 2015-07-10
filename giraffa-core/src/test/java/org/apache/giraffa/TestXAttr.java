@@ -639,6 +639,28 @@ public class TestXAttr extends FSXAttrBaseTest {
    * permission related Tests
    */
   @Test
+  public void testOnlySuperUserCanSetTRUSTEDXAttr() throws Exception {
+    grfs.setXAttr(path2, "trusted.a2", attrValue2);
+    assertEquals(1, grfs.listXAttrs(path2).size());
+
+    user1.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        GiraffaFileSystem userFs = getFS();
+        createEmptyFile(userFs, path1);
+        try {
+          userFs.setXAttr(path1, "trusted.a1", attrValue2);
+          Assert.fail("expected IOException");
+        } catch (IOException e) {
+          GenericTestUtils.
+              assertExceptionContains("User doesn\'t have permission", e);
+        }
+        assertEquals(0, userFs.getXAttrs(path1).size());
+        return null;
+      }
+    });
+  }
+
+  @Test
   public void testOnlySuperUserCanGetTRUSTEDXAttr() throws Exception {
     user1.doAs(new PrivilegedExceptionAction() {
       public Object run() throws Exception {
@@ -656,6 +678,7 @@ public class TestXAttr extends FSXAttrBaseTest {
     assertEquals(2, grfs.listXAttrs(user1Path).size());
   }
 
+/*
   @Test
   public void testNoUserCanGetUnvisibleXAttr() throws Exception {
     user1.doAs(new PrivilegedExceptionAction() {
@@ -673,7 +696,7 @@ public class TestXAttr extends FSXAttrBaseTest {
     });
     assertEquals(0, grfs.listXAttrs(user1Path).size());
   }
-
+*/
   @Test
   public void testCanNotRemoveXAttrWithoutParentXPermission() throws Exception {
     try {

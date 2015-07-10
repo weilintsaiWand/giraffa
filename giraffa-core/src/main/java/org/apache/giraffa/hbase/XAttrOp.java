@@ -79,8 +79,8 @@ public class XAttrOp {
     FSPermissionChecker pc = getFsPermissionChecker();
 
     // TODO. Complete all permission checking
-    // TODO. Think about what kind of permissions to be checked exactly
     // do the permission checking.
+    checkPermissionForApi(pc, xAttr);
 
     // check if we can overwrite/ exceed attr numbers limit of a file
     boolean isAttrExisted = false;
