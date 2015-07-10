@@ -654,7 +654,35 @@ public class TestXAttr extends FSXAttrBaseTest {
           GenericTestUtils.
               assertExceptionContains("User doesn\'t have permission", e);
         }
-        assertEquals(0, userFs.getXAttrs(path1).size());
+        assertEquals(0, userFs.listXAttrs(path1).size());
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void testNoUserCanSetSYSTEMXAttr() throws Exception {
+    try {
+      grfs.setXAttr(path2, "system.a2", attrValue2);
+      Assert.fail("expected IOException");
+    } catch (IOException e) {
+      GenericTestUtils.
+          assertExceptionContains("User doesn\'t have permission", e);
+    }
+    assertEquals(0, grfs.listXAttrs(path2).size());
+
+    user1.doAs(new PrivilegedExceptionAction() {
+      public Object run() throws Exception {
+        GiraffaFileSystem userFs = getFS();
+        createEmptyFile(userFs, path1);
+        try {
+          userFs.setXAttr(path1, "system.a1", attrValue1);
+          Assert.fail("expected IOException");
+        } catch (IOException e) {
+          GenericTestUtils.
+              assertExceptionContains("User doesn\'t have permission", e);
+        }
+        assertEquals(0, userFs.listXAttrs(path1).size());
         return null;
       }
     });
