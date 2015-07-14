@@ -80,7 +80,6 @@ public class XAttrOp {
     Preconditions.checkNotNull(src);
     Preconditions.checkNotNull(xAttr);
     Preconditions.checkNotNull(flag);
-
     checkIfFileExisted(src);
     FSPermissionChecker pc = getFsPermissionChecker();
     checkXAttrChangeAccess(src, xAttr, pc);
@@ -107,7 +106,6 @@ public class XAttrOp {
         ++userVisibleXAttrsNum;
       }
     }
-
     if(userVisibleXAttrsNum > inodeXAttrsLimit) {
       throw new IOException("Cannot add additional XAttr to inode,"
                             + " would exceed limit of " + inodeXAttrsLimit);
@@ -122,7 +120,6 @@ public class XAttrOp {
     checkIfFileExisted(src);
     final boolean isGetAll = (xAttrs == null || xAttrs.isEmpty());
     FSPermissionChecker pc = getFsPermissionChecker();
-
     if (!isGetAll && isPermissionEnabled) {
       checkPermissionForApi(pc, xAttrs);
     }
@@ -162,25 +159,21 @@ public class XAttrOp {
   public List<XAttr> listXAttrs(String src) throws IOException {
     Preconditions.checkNotNull(src);
     FSPermissionChecker pc = getFsPermissionChecker();
-
     checkIfFileExisted(src);
     if (isPermissionEnabled) {
       checkParentAccess(pc, src, FsAction.EXECUTE);
     }
-
     return filterXAttrsForApi(pc, nodeManager.getXAttrs(src));
   }
 
   public void removeXAttr(String src, XAttr xAttr) throws IOException {
     Preconditions.checkNotNull(src);
     Preconditions.checkNotNull(xAttr);
-
     checkIfFileExisted(src);
     FSPermissionChecker pc = getFsPermissionChecker();
     if (isPermissionEnabled) {
       checkPermissionForApi(pc, xAttr);
     }
-
     checkXAttrChangeAccess(src, xAttr, pc);
 
     // check if the attributes existed or not
@@ -215,7 +208,7 @@ public class XAttrOp {
   }
 
   private void checkXAttrChangeAccess(String src, XAttr xAttr,
-     FSPermissionChecker pc) throws IOException {
+    FSPermissionChecker pc) throws IOException {
     if(isPermissionEnabled && xAttr.getNameSpace() == XAttr.NameSpace.USER) {
       INode node = nodeManager.getINode(src);
       if(node.isDir() && node.getPermission().getStickyBit()) {
