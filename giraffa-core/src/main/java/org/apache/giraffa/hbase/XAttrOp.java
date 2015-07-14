@@ -141,8 +141,7 @@ public class XAttrOp {
     for (XAttr neededXAttr : xAttrs) {
       boolean foundIt = false;
       for (XAttr oldXAttr : oldXAttrList) {
-        if (neededXAttr.getNameSpace() == oldXAttr.getNameSpace() &&
-                neededXAttr.getName().equals(oldXAttr.getName())) {
+        if (neededXAttr.equalsIgnoreValue(oldXAttr)) {
           resXAttrList.add(oldXAttr);
           foundIt = true;
           break;
