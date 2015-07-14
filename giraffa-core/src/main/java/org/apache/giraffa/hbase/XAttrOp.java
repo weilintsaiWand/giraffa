@@ -61,7 +61,7 @@ public class XAttrOp {
     this.inodeXAttrsLimit = conf.getInt(DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY,
                             DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT);
     Preconditions.checkArgument(inodeXAttrsLimit >= 0,
-       "Cannot set a negative limit on the number of xattrs per inode (%s).",
+       "Cannot set a negative limit on the number of xAttrs per inode (%s).",
        DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY);
     UserGroupInformation fsOwner = UserGroupInformation.getCurrentUser();
     fsOwnerShortUserName = fsOwner.getShortUserName();
