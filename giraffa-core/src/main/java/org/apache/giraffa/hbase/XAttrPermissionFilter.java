@@ -43,7 +43,7 @@ public class XAttrPermissionFilter {
     if(xAttr.getNameSpace() != XAttr.NameSpace.USER &&
        (xAttr.getNameSpace() != XAttr.NameSpace.TRUSTED || !pc.isSuperUser())) {
       throw new AccessControlException("User doesn\'t have permission"
-         + " for xattr: " + XAttrHelper.getPrefixName(xAttr));
+         + " for xAttr: " + XAttrHelper.getPrefixName(xAttr));
     }
   }
 
