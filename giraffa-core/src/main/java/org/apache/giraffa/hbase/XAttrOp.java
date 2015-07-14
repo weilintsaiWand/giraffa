@@ -47,6 +47,10 @@ import java.util.List;
  * Do the similar thing as
  * {@link org.apache.hadoop.hdfs.server.namenode.XAttrStorage}
  * but not the same
+ * <p>
+ * Some methods are derived from Hadoop 2.5 source code:
+ * {@link org.apache.hadoop.hdfs.server.namenode.FSDirectory}
+ * {@link org.apache.hadoop.hdfs.server.namenode.FSNamesystem}
  */
 public class XAttrOp {
   private INodeManager nodeManager;
@@ -73,9 +77,9 @@ public class XAttrOp {
 
   public void setXAttr(String src, XAttr xAttr, EnumSet<XAttrSetFlag> flag)
           throws IOException {
-    if (src == null || xAttr == null || flag == null) {
-      throw new IllegalArgumentException("Argument is null");
-    }
+    Preconditions.checkNotNull(src);
+    Preconditions.checkNotNull(xAttr);
+    Preconditions.checkNotNull(flag);
 
     checkIfFileExisted(src);
     FSPermissionChecker pc = getFsPermissionChecker();
@@ -114,9 +118,7 @@ public class XAttrOp {
 
   public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs)
           throws IOException {
-    if (src == null) {
-      throw new IllegalArgumentException("Argument is null");
-    }
+    Preconditions.checkNotNull(src);
     checkIfFileExisted(src);
     final boolean isGetAll = (xAttrs == null || xAttrs.isEmpty());
     FSPermissionChecker pc = getFsPermissionChecker();
@@ -158,9 +160,7 @@ public class XAttrOp {
   }
 
   public List<XAttr> listXAttrs(String src) throws IOException {
-    if (src == null) {
-      throw new IllegalArgumentException("Argument is null");
-    }
+    Preconditions.checkNotNull(src);
     FSPermissionChecker pc = getFsPermissionChecker();
 
     checkIfFileExisted(src);
@@ -172,9 +172,8 @@ public class XAttrOp {
   }
 
   public void removeXAttr(String src, XAttr xAttr) throws IOException {
-    if (src == null || xAttr == null) {
-      throw new IllegalArgumentException("Argument is null");
-    }
+    Preconditions.checkNotNull(src);
+    Preconditions.checkNotNull(xAttr);
 
     checkIfFileExisted(src);
     FSPermissionChecker pc = getFsPermissionChecker();
@@ -205,28 +204,16 @@ public class XAttrOp {
     return node;
   }
 
-  /**
-   * copy from
-   * {@link org.apache.hadoop.hdfs.server.namenode.FSDirectory}
-   */
   private boolean isUserVisible(XAttr xAttr) {
     return xAttr.getNameSpace() == XAttr.NameSpace.USER ||
            xAttr.getNameSpace() == XAttr.NameSpace.TRUSTED;
   }
 
-  /**
-   * copy from
-   * {@link NamespaceProcessor#getFsPermissionChecker()}
-   */
   private FSPermissionChecker getFsPermissionChecker() throws IOException {
     UserGroupInformation ugi = HBaseRpcUtil.getRemoteUser();
     return new FSPermissionChecker(fsOwnerShortUserName, supergroup, ugi);
   }
 
-  /**
-   * derived from
-   * {@link org.apache.hadoop.hdfs.server.namenode.FSNamesystem}
-   */
   private void checkXAttrChangeAccess(String src, XAttr xAttr,
      FSPermissionChecker pc) throws IOException {
     if(isPermissionEnabled && xAttr.getNameSpace() == XAttr.NameSpace.USER) {
@@ -249,20 +236,12 @@ public class XAttrOp {
     }
   }
 
-  /**
-   * signature copy from
-   * {@link org.apache.hadoop.hdfs.server.namenode.FSNamesystem}
-   */
   private void checkPathAccess(FSPermissionChecker pc, String src,
                                FsAction access) throws IOException{
     INode node = nodeManager.getINode(src);
     pc.check(node, access);
   }
 
-  /**
-   * signature copy from
-   * {@link org.apache.hadoop.hdfs.server.namenode.FSNamesystem}
-   */
   private void checkParentAccess(FSPermissionChecker pc, String src,
                                  FsAction access) throws IOException{
     INode node = nodeManager.getParentINode(src);

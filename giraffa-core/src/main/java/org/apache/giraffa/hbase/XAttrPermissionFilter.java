@@ -34,9 +34,6 @@ import java.util.List;
  * Since that one is private
  */
 public class XAttrPermissionFilter {
-  public XAttrPermissionFilter() {
-  }
-
   static void checkPermissionForApi(FSPermissionChecker pc, XAttr xAttr)
       throws AccessControlException {
     if(xAttr.getNameSpace() != XAttr.NameSpace.USER &&
