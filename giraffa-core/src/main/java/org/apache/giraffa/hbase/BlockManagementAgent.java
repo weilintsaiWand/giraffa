@@ -181,8 +181,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
                      WALEdit edit, Durability durability) throws IOException {
     List<Cell> kvs = put.getFamilyCellMap().get(FileField.getFileAttributes());
 
-    // If we want to do XAttr related attribute, the CF is different
-    // so it will get NULL
+    // If not File Attributes related then skip processing
     if (kvs == null) { return; }
 
     BlockAction blockAction = getBlockAction(kvs);
