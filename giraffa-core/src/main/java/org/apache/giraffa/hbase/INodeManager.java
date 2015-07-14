@@ -303,7 +303,6 @@ public class INodeManager implements Closeable {
     node.setLocations(FileFieldDeserializer.getLocations(result));
   }
 
-  // Put a cell directly
   public void setXAttr(String path, XAttr xAttr) throws IOException {
     long ts = Time.now();
     RowKey rowKey = RowKeyFactory.newInstance(path);
