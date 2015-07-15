@@ -32,11 +32,13 @@ import java.util.List;
  * Copied and refined from
  * ${@link org.apache.hadoop.hdfs.server.namenode.XAttrPermissionFilter}
  * Since that one is private
+ * <p>
+ * The logic is the same as its source, only coding style is refined
  */
 public class XAttrPermissionFilter {
   static void checkPermissionForApi(FSPermissionChecker pc, XAttr xAttr)
       throws AccessControlException {
-    if(xAttr.getNameSpace() != XAttr.NameSpace.USER &&
+    if (xAttr.getNameSpace() != XAttr.NameSpace.USER &&
        (xAttr.getNameSpace() != XAttr.NameSpace.TRUSTED || !pc.isSuperUser())) {
       throw new AccessControlException("User doesn\'t have permission"
          + " for xAttr: " + XAttrHelper.getPrefixName(xAttr));
@@ -56,7 +58,7 @@ public class XAttrPermissionFilter {
     Preconditions.checkNotNull(xAttrs);
     ArrayList filteredXAttrs = Lists.newArrayListWithCapacity(xAttrs.size());
     for (XAttr xAttr : xAttrs) {
-      if(xAttr.getNameSpace() == XAttr.NameSpace.USER ||
+      if (xAttr.getNameSpace() == XAttr.NameSpace.USER ||
         (xAttr.getNameSpace() == XAttr.NameSpace.TRUSTED && pc.isSuperUser())) {
         filteredXAttrs.add(xAttr);
       }

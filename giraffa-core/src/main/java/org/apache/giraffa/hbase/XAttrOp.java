@@ -110,7 +110,6 @@ public class XAttrOp {
       throw new IOException("Cannot add additional XAttr to inode,"
                             + " would exceed limit of " + inodeXAttrsLimit);
     }
-
     nodeManager.setXAttr(src, xAttr);
   }
 
@@ -184,7 +183,6 @@ public class XAttrOp {
       throw new IOException(
         "No matching attributes found for remove operation");
     }
-
     nodeManager.removeXAttr(src, xAttr);
   }
 
