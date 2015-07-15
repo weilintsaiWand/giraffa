@@ -44,26 +44,26 @@ import java.util.EnumSet;
 import java.util.List;
 
 /**
- * It's a intermediate class between {@link NamespaceProcessor} and
+ * It's an intermediate class between {@link NamespaceProcessor} and
  * {@link INodeManager} to handle XAttr related operations. In
- * NamespaceProcessor, it does basic permission checking to see
+ * NamespaceProcessor, it has basic permission checking to see
  * if XAttr configuration flag is set and if a xAttr is valid. In
  * INodeManager, it communicates with Hbase to put/get XAttr info.
  * In this method, it covers all the rest parts. For instance,
- * it does more permission checking on input argument from
- * NamespaceProcessor. After processing, it formulate query parameters
- * to INodeManager to issue a Hbase put/get command. Finally, it
- * filters return lists under some circumstances and then return
+ * it has additional permission checking on input arguments from
+ * NamespaceProcessor. After processing, it generates query parameters
+ * to INodeManager for a Hbase put/get command. Finally, it
+ * filters returned lists under some circumstances and then returns
  * the result to NamespaceProcessor.
  * <p>
  * The idea comes from Hadoop source code. It's mainly based on
- * Hadoop 2.5 since it's the compatible version when this class
- * is developed. Please note there are some style/design changes
- * between Hadoop 2.5 and its later versions in XAttr parts. Any
- * way, the following is the comparison of XAttr handling between
+ * Hadoop 2.5 since that's the compatible version when this class
+ * is developed. Please note there are various style/design changes
+ * between Hadoop 2.5 and its later versions in XAttr parts. Basically,
+ * the followings are a comparison of XAttr handling between
  * Giraffa and Hadoop 2.5.
  * <p>
- * Now there's a list of class in Hadoop 2.5.
+ * There's a list of classes in Hadoop 2.5 and their counterparts in Giraffa
  * {@link org.apache.hadoop.hdfs.server.namenode.NNConf}
  *   Half functions are in NamespaceProcessor and the other half
  *   are in this class.
@@ -75,7 +75,7 @@ import java.util.List;
  *   All XAttr related functions are in this class.
  * <p>
  * There are bunch of permission checking in Hadoop code.
- * Some of them are existed in Giraffa
+ * Some of them are also in Giraffa
  *   1. Check if XAttribute feature is enable
  *      (Checked in NamespaceProcessor)
  *   2. Check for XAttribute permission (System/Security/Trusted/User)
