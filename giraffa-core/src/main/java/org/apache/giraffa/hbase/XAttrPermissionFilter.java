@@ -56,7 +56,8 @@ public class XAttrPermissionFilter {
   static List<XAttr> filterXAttrsForApi(FSPermissionChecker pc,
                                         List<XAttr> xAttrs) {
     Preconditions.checkNotNull(xAttrs);
-    ArrayList filteredXAttrs = Lists.newArrayListWithCapacity(xAttrs.size());
+    ArrayList<XAttr> filteredXAttrs =
+        Lists.newArrayListWithCapacity(xAttrs.size());
     for (XAttr xAttr : xAttrs) {
       if (xAttr.getNameSpace() == XAttr.NameSpace.USER ||
         (xAttr.getNameSpace() == XAttr.NameSpace.TRUSTED && pc.isSuperUser())) {
