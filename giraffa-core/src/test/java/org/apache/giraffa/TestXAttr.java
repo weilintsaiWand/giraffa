@@ -155,7 +155,7 @@ public class TestXAttr extends FSXAttrBaseTest {
     setupForOtherUsers();
     initAttributes();
     fs = grfs;   // replace fs in FSXAttrBaseTest with grfs
-    dfsCluster = new  MockMiniDFSCluster(); //
+    dfsCluster = new  MockMiniDFSCluster();
   }
 
   @After
@@ -354,18 +354,18 @@ public class TestXAttr extends FSXAttrBaseTest {
     try {
       grfs.getXAttr(noThisPath, attrName1);
       fail("expected FileNotFoundException");
-    } catch (FileNotFoundException e) {}
+    } catch (FileNotFoundException ignored) {}
 
     try {
       grfs.getXAttrs(noThisPath);
       fail("expected FileNotFoundException");
-    } catch (FileNotFoundException e) {}
+    } catch (FileNotFoundException ignored) {}
 
     try {
       List<String> attrNameList = Collections.singletonList(attrName1);
       grfs.getXAttrs(noThisPath, attrNameList);
       fail("expected FileNotFoundException");
-    } catch (FileNotFoundException e) {}
+    } catch (FileNotFoundException ignored) {}
   }
 
   @Test
@@ -373,18 +373,18 @@ public class TestXAttr extends FSXAttrBaseTest {
     try {
       grfs.getXAttr(null, attrName1);
       fail("expected NullPointerException");
-    } catch (NullPointerException e) {}
+    } catch (NullPointerException ignored) {}
 
     try {
       grfs.getXAttrs(null);
       fail("expected NullPointerException");
-    } catch (NullPointerException e) {}
+    } catch (NullPointerException ignored) {}
 
     try {
       List<String> attrNameList = Collections.singletonList(attrName1);
       grfs.getXAttrs(null, attrNameList);
       fail("expected NullPointerException");
-    } catch (NullPointerException e) {}
+    } catch (NullPointerException ignored) {}
   }
 
   @Test (expected = NullPointerException.class)
@@ -620,7 +620,6 @@ public class TestXAttr extends FSXAttrBaseTest {
    * Helper methods
    */
   private void createFiles() throws IOException {
-    final short permissionVal = 480; // 740
     // file 1
     path1 = new Path("aaa/bbb/ccc");
     createEmptyFile(grfs, path1);
