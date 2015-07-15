@@ -163,7 +163,6 @@ public class XAttrOp {
 
     List<XAttr> oldXAttrList = nodeManager.getXAttrs(src);
     oldXAttrList = filterXAttrsForApi(pc, oldXAttrList);
-
     if (isGetAll) {
       return oldXAttrList;
     }

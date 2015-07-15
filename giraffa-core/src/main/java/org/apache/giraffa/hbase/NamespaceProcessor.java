@@ -146,7 +146,6 @@ public class NamespaceProcessor implements ClientProtocol,
 
   private INodeManager nodeManager;
   private XAttrOp xAttrOp;
-
   private LeaseManager leaseManager;
   private Daemon monitor;
   private FsServerDefaults serverDefaults;
@@ -1572,7 +1571,6 @@ public class NamespaceProcessor implements ClientProtocol,
       if(xAttr.getValue() != null) {
         size += xAttr.getValue().length;
       }
-
       if(size > xAttrMaxSize) {
         throw new HadoopIllegalArgumentException("The XAttr is too big."
         + " The maximum combined size of the name and value is " + xAttrMaxSize

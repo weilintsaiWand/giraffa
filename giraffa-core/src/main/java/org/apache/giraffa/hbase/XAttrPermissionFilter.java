@@ -33,7 +33,7 @@ import java.util.List;
  * ${@link org.apache.hadoop.hdfs.server.namenode.XAttrPermissionFilter}
  * Since that one is private
  * <p>
- * The logic is the same as its source, only coding style is refined
+ * The logic is the same as its original, only coding style is refined
  */
 public class XAttrPermissionFilter {
   static void checkPermissionForApi(FSPermissionChecker pc, XAttr xAttr)

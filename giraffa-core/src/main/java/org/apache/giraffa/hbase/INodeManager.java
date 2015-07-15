@@ -308,7 +308,6 @@ public class INodeManager implements Closeable {
     RowKey rowKey = RowKeyFactory.newInstance(path);
     Put put = new Put(rowKey.getKey(), ts);
     String realColumnName = XAttrHelper.getPrefixName(xAttr);
-
     put.addColumn(FileField.getFileExtenedAttributes(),
             Bytes.toBytes(realColumnName), ts, xAttr.getValue());
     getNSTable().put(put);
@@ -324,10 +323,8 @@ public class INodeManager implements Closeable {
     RowKey rowKey = RowKeyFactory.newInstance(path);
     Delete delete = new Delete(rowKey.getKey());
     String realColumnName = XAttrHelper.getPrefixName(xAttr);
-
     delete.addColumns(FileField.getFileExtenedAttributes(),
                      Bytes.toBytes(realColumnName));
-
     getNSTable().delete(delete);
   }
 
