@@ -132,7 +132,6 @@ import org.apache.hadoop.util.Daemon;
 import org.apache.hadoop.util.DataChecksum;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Preconditions;
 import com.google.protobuf.Service;
 
 /**
@@ -192,9 +191,9 @@ public class NamespaceProcessor implements ClientProtocol,
     LOG.info("xAttrsEnabled = " + xAttrsEnabled);
     xAttrMaxSize = conf.getInt(DFS_NAMENODE_MAX_XATTR_SIZE_KEY,
                                DFS_NAMENODE_MAX_XATTR_SIZE_DEFAULT);
-    Preconditions.checkArgument(xAttrMaxSize >= 0,
-         "Cannot set a negative value for the maximum size of an xAttr (%s).",
-         DFS_NAMENODE_MAX_XATTR_SIZE_DEFAULT);
+    assert xAttrMaxSize >= 0 :
+        "Cannot set a negative value for the maximum size of an xAttr (" +
+        DFS_NAMENODE_MAX_XATTR_SIZE_DEFAULT + ").";
 
     String unlimited = (xAttrMaxSize == 0) ? " (unlimited)" : "";
     LOG.info("Maximum size of an xAttr:" + xAttrMaxSize + unlimited);
