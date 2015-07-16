@@ -194,7 +194,6 @@ public class NamespaceProcessor implements ClientProtocol,
     assert xAttrMaxSize >= 0 :
         "Cannot set a negative value for the maximum size of an xAttr (" +
         DFS_NAMENODE_MAX_XATTR_SIZE_DEFAULT + ").";
-
     String unlimited = (xAttrMaxSize == 0) ? " (unlimited)" : "";
     LOG.info("Maximum size of an xAttr:" + xAttrMaxSize + unlimited);
 
