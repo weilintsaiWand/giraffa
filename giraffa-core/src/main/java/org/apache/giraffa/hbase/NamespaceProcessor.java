@@ -130,7 +130,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.util.DataChecksum;
 
-import com.google.common.base.Charsets;
 import com.google.protobuf.Service;
 
 /**
@@ -1559,7 +1558,7 @@ public class NamespaceProcessor implements ClientProtocol,
    */
   private void checkXAttrSize(XAttr xAttr) {
     if(xAttrMaxSize != 0) {
-      int size = xAttr.getName().getBytes(Charsets.UTF_8).length;
+      int size = xAttr.getName().getBytes().length;
       if(xAttr.getValue() != null) {
         size += xAttr.getValue().length;
       }
