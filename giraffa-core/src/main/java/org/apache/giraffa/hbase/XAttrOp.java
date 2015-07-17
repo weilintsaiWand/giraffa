@@ -26,8 +26,6 @@ import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_SUPERUSERGROUP_DEFAULT;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_SUPERUSERGROUP_KEY;
 
-import com.google.common.collect.Lists;
-
 import org.apache.giraffa.FSPermissionChecker;
 import org.apache.giraffa.INode;
 import org.apache.hadoop.conf.Configuration;
@@ -39,6 +37,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -169,7 +168,7 @@ public class XAttrOp {
       throw new IOException(
               "At least one of the attributes provided was not found.");
     }
-    List<XAttr> resXAttrList = Lists.newArrayListWithCapacity(xAttrs.size());
+    List<XAttr> resXAttrList = new ArrayList<XAttr>();
     for (XAttr neededXAttr : xAttrs) {
       boolean foundIt = false;
       for (XAttr oldXAttr : oldXAttrList) {
@@ -207,7 +206,7 @@ public class XAttrOp {
     checkXAttrChangeAccess(src, xAttr, pc);
 
     // check if the attributes existed or not
-    List<XAttr> targetXAttrList = Lists.newArrayListWithCapacity(1);
+    List<XAttr> targetXAttrList = new ArrayList<XAttr>();
     targetXAttrList.add(xAttr);
     try {
       getXAttrs(src, targetXAttrList);

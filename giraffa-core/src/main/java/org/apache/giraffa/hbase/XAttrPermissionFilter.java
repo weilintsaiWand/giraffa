@@ -17,13 +17,12 @@
  */
 package org.apache.giraffa.hbase;
 
-import com.google.common.collect.Lists;
-
 import org.apache.giraffa.FSPermissionChecker;
 import org.apache.hadoop.fs.XAttr;
 import org.apache.hadoop.hdfs.XAttrHelper;
 import org.apache.hadoop.security.AccessControlException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -55,8 +54,7 @@ public class XAttrPermissionFilter {
   static List<XAttr> filterXAttrsForApi(FSPermissionChecker pc,
                                         List<XAttr> xAttrs) {
     assert (xAttrs != null) : "Argument is null";
-    List<XAttr> filteredXAttrs =
-        Lists.newArrayListWithCapacity(xAttrs.size());
+    List<XAttr> filteredXAttrs = new ArrayList<XAttr>();
     for (XAttr xAttr : xAttrs) {
       if (xAttr.getNameSpace() == XAttr.NameSpace.USER ||
         (xAttr.getNameSpace() == XAttr.NameSpace.TRUSTED && pc.isSuperUser())) {
