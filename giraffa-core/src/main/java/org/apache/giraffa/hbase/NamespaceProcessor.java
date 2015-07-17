@@ -1496,26 +1496,26 @@ public class NamespaceProcessor implements ClientProtocol,
       throws IOException {
     checkXAttrsConfigFlag();
     checkXAttrSize(xAttr);
-    xAttrOp.setXAttr(src, xAttr, flag);
+    xAttrOp.setXAttr(src, xAttr, flag, getFsPermissionChecker());
   }
 
   @Override
   public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs)
       throws IOException {
     checkXAttrsConfigFlag();
-    return xAttrOp.getXAttrs(src, xAttrs);
+    return xAttrOp.getXAttrs(src, xAttrs, getFsPermissionChecker());
   }
 
   @Override
   public List<XAttr> listXAttrs(String src) throws IOException {
     checkXAttrsConfigFlag();
-    return xAttrOp.listXAttrs(src);
+    return xAttrOp.listXAttrs(src, getFsPermissionChecker());
   }
 
   @Override
   public void removeXAttr(String src, XAttr xAttr) throws IOException {
     checkXAttrsConfigFlag();
-    xAttrOp.removeXAttr(src, xAttr);
+    xAttrOp.removeXAttr(src, xAttr, getFsPermissionChecker());
   }
 
   public boolean internalReleaseLease(FileLease lease, String src)

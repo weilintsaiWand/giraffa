@@ -23,8 +23,6 @@ import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_I
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_DEFAULT;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_KEY;
-import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_SUPERUSERGROUP_DEFAULT;
-import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_SUPERUSERGROUP_KEY;
 
 import org.apache.giraffa.FSPermissionChecker;
 import org.apache.giraffa.INode;
@@ -32,8 +30,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.XAttr;
 import org.apache.hadoop.fs.XAttrSetFlag;
 import org.apache.hadoop.fs.permission.FsAction;
-import org.apache.hadoop.hbase.ipc.HBaseRpcUtil;
-import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -90,8 +86,6 @@ import java.util.List;
 public class XAttrOp {
   private INodeManager nodeManager;
   private int inodeXAttrsLimit;
-  private String fsOwnerShortUserName;
-  private String supergroup;
   private boolean isPermissionEnabled;
 
   public XAttrOp(INodeManager nodeManager, Configuration conf)
@@ -102,26 +96,23 @@ public class XAttrOp {
     assert inodeXAttrsLimit >= 0 :
         "Cannot set a negative limit on the number of xAttrs per inode (" +
         DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY + ").";
-    UserGroupInformation fsOwner = UserGroupInformation.getCurrentUser();
-    fsOwnerShortUserName = fsOwner.getShortUserName();
-    supergroup = conf.get(DFS_PERMISSIONS_SUPERUSERGROUP_KEY,
-                          DFS_PERMISSIONS_SUPERUSERGROUP_DEFAULT);
     isPermissionEnabled = conf.getBoolean(DFS_PERMISSIONS_ENABLED_KEY,
                                           DFS_PERMISSIONS_ENABLED_DEFAULT);
   }
 
-  public void setXAttr(String src, XAttr xAttr, EnumSet<XAttrSetFlag> flag)
+  public void setXAttr(String src, XAttr xAttr, EnumSet<XAttrSetFlag> flag,
+                       FSPermissionChecker pc)
           throws IOException {
-    assert (src != null && xAttr != null && flag != null) : "Argument is null";
+    assert (src != null && xAttr != null && flag != null && pc != null)
+        : "Argument is null";
     checkIfFileExisted(src);
-    FSPermissionChecker pc = getFsPermissionChecker();
     checkXAttrChangeAccess(src, xAttr, pc);
     checkPermissionForApi(pc, xAttr);
 
     // check if we can overwrite/ exceed attr numbers limit of a file
     boolean isAttrExisted = false;
     int userVisibleXAttrsNum = 0;
-    List<XAttr> oldXAttrList = listXAttrs(src);
+    List<XAttr> oldXAttrList = listXAttrs(src, pc);
     if (oldXAttrList != null) {
       for (XAttr oldAttr : oldXAttrList) {
         if (xAttr.equalsIgnoreValue(oldAttr)) {
@@ -146,12 +137,12 @@ public class XAttrOp {
     nodeManager.setXAttr(src, xAttr);
   }
 
-  public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs)
+  public List<XAttr> getXAttrs(String src, List<XAttr> xAttrs,
+                               FSPermissionChecker pc)
           throws IOException {
-    assert (src != null) : "Argument is null";
+    assert (src != null && pc != null) : "Argument is null";
     checkIfFileExisted(src);
     final boolean isGetAll = (xAttrs == null || xAttrs.isEmpty());
-    FSPermissionChecker pc = getFsPermissionChecker();
     if (!isGetAll && isPermissionEnabled) {
       checkPermissionForApi(pc, xAttrs);
     }
@@ -186,9 +177,9 @@ public class XAttrOp {
     return resXAttrList;
   }
 
-  public List<XAttr> listXAttrs(String src) throws IOException {
-    assert (src != null) : "Argument is null";
-    FSPermissionChecker pc = getFsPermissionChecker();
+  public List<XAttr> listXAttrs(String src, FSPermissionChecker pc)
+      throws IOException {
+    assert (src != null && pc != null) : "Argument is null";
     checkIfFileExisted(src);
     if (isPermissionEnabled) {
       checkParentAccess(pc, src, FsAction.EXECUTE);
@@ -196,10 +187,10 @@ public class XAttrOp {
     return filterXAttrsForApi(pc, nodeManager.getXAttrs(src));
   }
 
-  public void removeXAttr(String src, XAttr xAttr) throws IOException {
-    assert (src != null && xAttr != null) : "Argument is null";
+  public void removeXAttr(String src, XAttr xAttr, FSPermissionChecker pc)
+      throws IOException {
+    assert (src != null && xAttr != null && pc != null) : "Argument is null";
     checkIfFileExisted(src);
-    FSPermissionChecker pc = getFsPermissionChecker();
     if (isPermissionEnabled) {
       checkPermissionForApi(pc, xAttr);
     }
@@ -209,7 +200,7 @@ public class XAttrOp {
     List<XAttr> targetXAttrList = new ArrayList<XAttr>();
     targetXAttrList.add(xAttr);
     try {
-      getXAttrs(src, targetXAttrList);
+      getXAttrs(src, targetXAttrList, pc);
     } catch (IOException e) {
       throw new IOException(
         "No matching attributes found for remove operation");
@@ -228,11 +219,6 @@ public class XAttrOp {
   private boolean isUserVisible(XAttr xAttr) {
     return xAttr.getNameSpace() == XAttr.NameSpace.USER ||
            xAttr.getNameSpace() == XAttr.NameSpace.TRUSTED;
-  }
-
-  private FSPermissionChecker getFsPermissionChecker() throws IOException {
-    UserGroupInformation ugi = HBaseRpcUtil.getRemoteUser();
-    return new FSPermissionChecker(fsOwnerShortUserName, supergroup, ugi);
   }
 
   private void checkXAttrChangeAccess(String src, XAttr xAttr,
