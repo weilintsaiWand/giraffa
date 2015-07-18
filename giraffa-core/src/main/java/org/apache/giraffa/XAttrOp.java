@@ -17,6 +17,8 @@
  */
 package org.apache.giraffa;
 
+import static org.apache.giraffa.XAttrPermissionFilter.checkPermissionForApi;
+import static org.apache.giraffa.XAttrPermissionFilter.filterXAttrsForApi;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_DEFAULT;
@@ -105,7 +107,7 @@ public class XAttrOp {
         : "Argument is null";
     checkIfFileExisted(src);
     checkXAttrChangeAccess(src, xAttr, pc);
-    XAttrPermissionFilter.checkPermissionForApi(pc, xAttr);
+    checkPermissionForApi(pc, xAttr);
 
     // check if we can overwrite/ exceed attr numbers limit of a file
     boolean isAttrExisted = false;
@@ -142,12 +144,12 @@ public class XAttrOp {
     checkIfFileExisted(src);
     final boolean isGetAll = (xAttrs == null || xAttrs.isEmpty());
     if (!isGetAll && isPermissionEnabled) {
-      XAttrPermissionFilter.checkPermissionForApi(pc, xAttrs);
+      checkPermissionForApi(pc, xAttrs);
     }
     checkPathAccess(pc, src, FsAction.READ);
 
     List<XAttr> oldXAttrList = nodeManager.getXAttrs(src);
-    oldXAttrList = XAttrPermissionFilter.filterXAttrsForApi(pc, oldXAttrList);
+    oldXAttrList = filterXAttrsForApi(pc, oldXAttrList);
     if (isGetAll) {
       return oldXAttrList;
     }
@@ -182,8 +184,7 @@ public class XAttrOp {
     if (isPermissionEnabled) {
       checkParentAccess(pc, src, FsAction.EXECUTE);
     }
-    return XAttrPermissionFilter
-        .filterXAttrsForApi(pc, nodeManager.getXAttrs(src));
+    return filterXAttrsForApi(pc, nodeManager.getXAttrs(src));
   }
 
   public void removeXAttr(String src, XAttr xAttr, FSPermissionChecker pc)
@@ -191,7 +192,7 @@ public class XAttrOp {
     assert (src != null && xAttr != null && pc != null) : "Argument is null";
     checkIfFileExisted(src);
     if (isPermissionEnabled) {
-      XAttrPermissionFilter.checkPermissionForApi(pc, xAttr);
+      checkPermissionForApi(pc, xAttr);
     }
     checkXAttrChangeAccess(src, xAttr, pc);
 
