@@ -15,17 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.giraffa.hbase;
+package org.apache.giraffa;
 
-import static org.apache.giraffa.hbase.XAttrPermissionFilter.checkPermissionForApi;
-import static org.apache.giraffa.hbase.XAttrPermissionFilter.filterXAttrsForApi;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_MAX_XATTRS_PER_INODE_DEFAULT;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_DEFAULT;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_PERMISSIONS_ENABLED_KEY;
 
-import org.apache.giraffa.FSPermissionChecker;
-import org.apache.giraffa.INode;
+import org.apache.giraffa.hbase.INodeManager;
+import org.apache.giraffa.hbase.NamespaceProcessor;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.XAttr;
 import org.apache.hadoop.fs.XAttrSetFlag;
@@ -107,7 +105,7 @@ public class XAttrOp {
         : "Argument is null";
     checkIfFileExisted(src);
     checkXAttrChangeAccess(src, xAttr, pc);
-    checkPermissionForApi(pc, xAttr);
+    XAttrPermissionFilter.checkPermissionForApi(pc, xAttr);
 
     // check if we can overwrite/ exceed attr numbers limit of a file
     boolean isAttrExisted = false;
@@ -144,12 +142,12 @@ public class XAttrOp {
     checkIfFileExisted(src);
     final boolean isGetAll = (xAttrs == null || xAttrs.isEmpty());
     if (!isGetAll && isPermissionEnabled) {
-      checkPermissionForApi(pc, xAttrs);
+      XAttrPermissionFilter.checkPermissionForApi(pc, xAttrs);
     }
     checkPathAccess(pc, src, FsAction.READ);
 
     List<XAttr> oldXAttrList = nodeManager.getXAttrs(src);
-    oldXAttrList = filterXAttrsForApi(pc, oldXAttrList);
+    oldXAttrList = XAttrPermissionFilter.filterXAttrsForApi(pc, oldXAttrList);
     if (isGetAll) {
       return oldXAttrList;
     }
@@ -184,7 +182,8 @@ public class XAttrOp {
     if (isPermissionEnabled) {
       checkParentAccess(pc, src, FsAction.EXECUTE);
     }
-    return filterXAttrsForApi(pc, nodeManager.getXAttrs(src));
+    return XAttrPermissionFilter
+        .filterXAttrsForApi(pc, nodeManager.getXAttrs(src));
   }
 
   public void removeXAttr(String src, XAttr xAttr, FSPermissionChecker pc)
@@ -192,7 +191,7 @@ public class XAttrOp {
     assert (src != null && xAttr != null && pc != null) : "Argument is null";
     checkIfFileExisted(src);
     if (isPermissionEnabled) {
-      checkPermissionForApi(pc, xAttr);
+      XAttrPermissionFilter.checkPermissionForApi(pc, xAttr);
     }
     checkXAttrChangeAccess(src, xAttr, pc);
 

@@ -66,6 +66,7 @@ import org.apache.giraffa.RowKey;
 import org.apache.giraffa.RowKeyFactory;
 import org.apache.giraffa.UnlocatedBlock;
 import org.apache.giraffa.GiraffaConstants.FileState;
+import org.apache.giraffa.XAttrOp;
 import org.apache.giraffa.hbase.INodeManager.Function;
 import org.apache.hadoop.HadoopIllegalArgumentException;
 import org.apache.hadoop.conf.Configuration;
