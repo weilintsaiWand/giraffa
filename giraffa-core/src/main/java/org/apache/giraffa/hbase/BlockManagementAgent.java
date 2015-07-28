@@ -34,6 +34,9 @@ import org.apache.giraffa.FileField;
 import org.apache.giraffa.FileLease;
 import org.apache.giraffa.GiraffaPBHelper;
 import org.apache.giraffa.LeaseManager;
+import org.apache.giraffa.RowKey;
+import org.apache.giraffa.RowKeyBytes;
+import org.apache.giraffa.RowKeyFactory;
 import org.apache.giraffa.UnlocatedBlock;
 import org.apache.giraffa.GiraffaConstants.BlockAction;
 import org.apache.hadoop.conf.Configuration;
@@ -47,7 +50,9 @@ import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Durability;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
 import org.apache.hadoop.hbase.coprocessor.CoprocessorException;
@@ -182,6 +187,8 @@ public class BlockManagementAgent extends BaseRegionObserver {
     List<Cell> kvs = put.getFamilyCellMap().get(FileField.getFileAttributes());
     // If not File Attributes related then skip processing
     if (kvs == null) { return; }
+    if (updateLeaseOnly(kvs, e, put)) { return; }
+
     BlockAction blockAction = getBlockAction(kvs);
     if(blockAction == null) {
       return;
@@ -438,6 +445,18 @@ public class BlockManagementAgent extends BaseRegionObserver {
     updateField(kvs, FileField.LENGTH, Bytes.toBytes(fileInfo.getLen()));
     updateField(kvs, FileField.FILE_STATE,
         Bytes.toBytes(FileState.CLOSED.toString()));
+  }
+
+  private boolean updateLeaseOnly(List<Cell> kvs, ObserverContext<RegionCoprocessorEnvironment> e, Put put) throws IOException {
+    if (kvs.size() == 1) {
+      byte[] key = put.getRow();
+      Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
+      if (FileFieldDeserializer.getFileState(nodeInfo).equals(FileState.CLOSED)) {
+        updateField(kvs, FileField.LEASE, null);
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean recoverBlockFile(ExtendedBlock block) throws IOException {
