@@ -456,6 +456,11 @@ public class BlockManagementAgent extends BaseRegionObserver {
         return true;
       }
     }
+    // handle race condition that create put "UNDER_CONSTRUCTION" while
+    // the file already close by lease recovering
+    Cell cell = findField(kvs, FileField.FILE_STATE);
+    String s = Bytes.toString(cell.getValueArray());
+
     return false;
   }
 
