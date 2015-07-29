@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.giraffa.FileField;
 import org.apache.giraffa.FileLease;
+import org.apache.giraffa.GiraffaConstants;
 import org.apache.giraffa.GiraffaPBHelper;
 import org.apache.giraffa.LeaseManager;
 import org.apache.giraffa.RowKey;
@@ -453,13 +454,23 @@ public class BlockManagementAgent extends BaseRegionObserver {
       Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
       if (FileFieldDeserializer.getFileState(nodeInfo).equals(FileState.CLOSED)) {
         updateField(kvs, FileField.LEASE, null);
+        kvs.clear();
         return true;
       }
     }
     // handle race condition that create put "UNDER_CONSTRUCTION" while
     // the file already close by lease recovering
     Cell cell = findField(kvs, FileField.FILE_STATE);
-    String s = Bytes.toString(cell.getValueArray());
+    if (cell != null && CellUtil.cloneValue(cell).toString().
+          equals(FileState.UNDER_CONSTRUCTION.toString())) {
+        LOG.info("GG");
+      byte[] key = put.getRow();
+      Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
+      if (FileFieldDeserializer.getFileState(nodeInfo).equals(FileState.CLOSED)) {
+        kvs.clear();
+        return true;
+      }
+    }
 
     return false;
   }
