@@ -32,12 +32,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.giraffa.FileField;
 import org.apache.giraffa.FileLease;
-import org.apache.giraffa.GiraffaConstants;
 import org.apache.giraffa.GiraffaPBHelper;
 import org.apache.giraffa.LeaseManager;
-import org.apache.giraffa.RowKey;
-import org.apache.giraffa.RowKeyBytes;
-import org.apache.giraffa.RowKeyFactory;
 import org.apache.giraffa.UnlocatedBlock;
 import org.apache.giraffa.GiraffaConstants.BlockAction;
 import org.apache.hadoop.conf.Configuration;
@@ -188,7 +184,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     List<Cell> kvs = put.getFamilyCellMap().get(FileField.getFileAttributes());
     // If not File Attributes related then skip processing
     if (kvs == null) { return; }
-    if (updateLeaseOnly(kvs, e, put)) { return; }
+    if (checkIfRacing(kvs, e, put)) { return; }
 
     BlockAction blockAction = getBlockAction(kvs);
     if(blockAction == null) {
@@ -448,22 +444,25 @@ public class BlockManagementAgent extends BaseRegionObserver {
         Bytes.toBytes(FileState.CLOSED.toString()));
   }
 
-  private boolean updateLeaseOnly(List<Cell> kvs, ObserverContext<RegionCoprocessorEnvironment> e, Put put) throws IOException {
+  private boolean checkIfRacing(List<Cell> kvs,
+                                ObserverContext<RegionCoprocessorEnvironment> e,
+                                Put put) throws IOException {
+    boolean needCheck = false;
+
+    // from updateINodeLease
     if (kvs.size() == 1) {
-      byte[] key = put.getRow();
-      Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
-      if (FileFieldDeserializer.getFileState(nodeInfo).equals(FileState.CLOSED)) {
-        updateField(kvs, FileField.LEASE, null);
-        kvs.clear();
-        return true;
-      }
+      needCheck = true;
     }
+
     // handle race condition that create put "UNDER_CONSTRUCTION" while
     // the file already close by lease recovering
     Cell cell = findField(kvs, FileField.FILE_STATE);
     if (cell != null && CellUtil.cloneValue(cell).toString().
           equals(FileState.UNDER_CONSTRUCTION.toString())) {
-        LOG.info("GG");
+      needCheck = true;
+    }
+
+    if (needCheck) {
       byte[] key = put.getRow();
       Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
       if (FileFieldDeserializer.getFileState(nodeInfo).equals(FileState.CLOSED)) {
