@@ -69,7 +69,7 @@ public class TestLeaseManagementRepeat {
 
   @RandParameterized.Parameters
   public static List<Object[]> data() {
-    return Arrays.asList(new Object[10][0]);
+    return Arrays.asList(new Object[100][0]);
   }
 
   public TestLeaseManagementRepeat() {
@@ -282,7 +282,7 @@ public class TestLeaseManagementRepeat {
       leases = leaseManager.getLeases(rowLease.getHolder());
       assertThat(leases.size(), is(1));
       leaseManagerLease = leases.iterator().next();
-      assertThat(rowLease, is(equalTo(leaseManagerLease)));
+      assertThat(rowLease, is(equalTo(leaseManagerLease)));  // failed here
     } finally {
       IOUtils.cleanup(LOG, outputStream);
     }

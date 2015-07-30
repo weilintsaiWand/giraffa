@@ -483,7 +483,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     try {
       recoverLastBlock(kvs);
     } catch (Exception exception) {
-      putFileState(put, e, FileState.UNDER_CONSTRUCTION);
+    //  //putFileState(put, e, FileState.UNDER_CONSTRUCTION);
     }
   }
 
@@ -492,7 +492,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
      byte[] key = put.getRow();
      long ts = put.getTimeStamp() - 1;
      Put newPut = new Put (key, ts);
-     newPut.addColumn(FileField.getFileExtendedAttributes(),
+     newPut.addColumn(FileField.getFileAttributes(),
                   FileField.getFileState(), ts,
                   Bytes.toBytes(fs.toString()));
     try {
