@@ -412,15 +412,15 @@ public class BlockManagementAgent extends BaseRegionObserver {
 
     if(leaseBytes == null || leaseBytes.length == 0) {
       LOG.warn("Could not perform recovery due to missing lease field.");
-      return;
+      throw new IOException("Could not perform recovery due to missing lease field.");
     }
     if(blockBytes == null || blockBytes.length == 0) {
       LOG.warn("Could not perform recovery due to missing blocks field.");
-      return;
+      throw new IOException("Could not perform recovery due to missing blocks field.");
     }
     if(unlocatedBlocks == null || unlocatedBlocks.size() == 0) {
       LOG.warn("Could not perform recovery due to zero blocks in file.");
-      return;
+      throw new IOException("Could not perform recovery due to zero blocks in file.");
     }
 
     FileLease lease = GiraffaPBHelper.bytesToHdfsLease(leaseBytes);
@@ -431,7 +431,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     removeField(kvs, FileField.ACTION);
     if(!recovered) {
       LOG.error("Block could not be recovered. File is still under recovery.");
-      return;
+      throw new IOException("Block could not be recovered. File is still under recovery.");
     } else {
       LOG.info("Recovered block file: " + blockFileName);
     }
