@@ -72,7 +72,7 @@ public class TestLeaseManagementRepeat {
 
   @Parameterized.Parameters
   public static List<Object[]> data() {
-    return Arrays.asList(new Object[150][0]);
+    return Arrays.asList(new Object[10000][0]);
   }
 
   public TestLeaseManagementRepeat() {
@@ -165,6 +165,7 @@ public class TestLeaseManagementRepeat {
     assertThat(lease, is(nullValue()));
   }
 */
+
   @Test
   public void testLeaseRecovery() throws IOException {
     String src = "/testLeaseRecovery";
@@ -199,6 +200,7 @@ public class TestLeaseManagementRepeat {
       IOUtils.closeStream(outputStream);
     }
   }
+
 /*
   @Test
   public void testClientLeaseRecovery() throws IOException {
@@ -233,7 +235,7 @@ public class TestLeaseManagementRepeat {
    * or by RegionServer shutdown, that an incomplete file with a lease migrates
    * with the Region and that the lease is reloaded upon open and stays valid.
    */
-
+/*
   @Test
   public void testLeaseMigration() throws Exception {
     String src = "/testLeaseFailure";
@@ -292,7 +294,7 @@ public class TestLeaseManagementRepeat {
     FileLease lease = iNode.getLease();
     assertThat(lease, is(nullValue()));
   }
-
+*/
   void checkLease(String src, long currentTime) throws IOException {
     INode iNode = nodeManager.getINode(src);
     FileLease lease = iNode.getLease();

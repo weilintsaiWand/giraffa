@@ -23,6 +23,7 @@ import static org.apache.hadoop.hbase.CellUtil.matchingColumn;
 import static org.apache.hadoop.util.Time.now;
 
 import java.io.IOException;
+import java.security.Timestamp;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -201,7 +202,8 @@ public class BlockManagementAgent extends BaseRegionObserver {
         completeBlocks(kvs);
         break;
       case RECOVER:
-        recoverLastBlock(kvs);
+        recoverLastBlockWrapper(kvs, e, put);
+        //recoverLastBlock(kvs);
         break;
       default:
         LOG.debug("Unknown BlockAction found: " + blockAction + ", returning.");
@@ -472,6 +474,37 @@ public class BlockManagementAgent extends BaseRegionObserver {
     }
 
     return false;
+  }
+
+  private void recoverLastBlockWrapper(List<Cell> kvs,
+                                ObserverContext<RegionCoprocessorEnvironment> e,
+                                Put put) {
+    byte[] key = put.getRow();
+    long ts = put.getTimeStamp() - 1;
+    Put newPut = new Put (key, ts);
+    newPut.addColumn(FileField.getFileExtendedAttributes(),
+                  FileField.getFileState(), ts,
+                  Bytes.toBytes(FileState.RECOVERING.toString()));
+    try {
+      e.getEnvironment().getRegion().put(newPut);
+    } catch (Exception exp1) {
+      exp1.printStackTrace();
+    }
+
+    try {
+      recoverLastBlock(kvs);
+    } catch (Exception exp2) {
+      exp2.printStackTrace();
+      newPut = new Put (key, ts);
+      newPut.addColumn(FileField.getFileExtendedAttributes(),
+                       FileField.getFileState(), ts,
+                       Bytes.toBytes(FileState.UNDER_CONSTRUCTION.toString()));
+      try {
+        e.getEnvironment().getRegion().put(newPut);
+      } catch (Exception exp3) {
+        exp3.printStackTrace();
+      }
+    }
   }
 
   private boolean recoverBlockFile(ExtendedBlock block) throws IOException {
