@@ -40,17 +40,14 @@ import org.apache.hadoop.hbase.MiniHBaseCluster;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.regionserver.HRegionServer;
-import org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException;
 import org.apache.hadoop.hdfs.protocol.HdfsConstants;
 import org.apache.hadoop.io.IOUtils;
-import org.apache.hadoop.util.Time;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -59,7 +56,7 @@ import java.util.Collection;
 import java.util.List;
 
 
-@RunWith(Parameterized.class)
+@RunWith(RandParameterized.class)
 public class TestLeaseManagementRepeat {
   private static final Log LOG = LogFactory.getLog(TestLeaseManagementRepeat.class);
 
@@ -70,7 +67,7 @@ public class TestLeaseManagementRepeat {
   private Connection connection;
   private INodeManager nodeManager;
 
-  @Parameterized.Parameters
+  @RandParameterized.Parameters
   public static List<Object[]> data() {
     return Arrays.asList(new Object[10][0]);
   }
@@ -235,7 +232,7 @@ public class TestLeaseManagementRepeat {
    * or by RegionServer shutdown, that an incomplete file with a lease migrates
    * with the Region and that the lease is reloaded upon open and stays valid.
    */
-/*
+
   @Test
   public void testLeaseMigration() throws Exception {
     String src = "/testLeaseFailure";
@@ -294,7 +291,7 @@ public class TestLeaseManagementRepeat {
     FileLease lease = iNode.getLease();
     assertThat(lease, is(nullValue()));
   }
-*/
+
   void checkLease(String src, long currentTime) throws IOException {
     INode iNode = nodeManager.getINode(src);
     FileLease lease = iNode.getLease();
