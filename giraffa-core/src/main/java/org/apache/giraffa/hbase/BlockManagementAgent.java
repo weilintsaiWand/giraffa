@@ -450,7 +450,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     boolean needCheck = false;
 
     // from updateINodeLease
-    if (kvs.size() == 1) {
+    if ((kvs.size() == 1) && (findField(kvs, FileField.LEASE) != null)) {
       needCheck = true;
     }
 
