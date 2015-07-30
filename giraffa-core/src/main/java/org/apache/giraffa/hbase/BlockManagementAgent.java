@@ -479,31 +479,26 @@ public class BlockManagementAgent extends BaseRegionObserver {
   private void recoverLastBlockWrapper(List<Cell> kvs,
                                 ObserverContext<RegionCoprocessorEnvironment> e,
                                 Put put) {
-    byte[] key = put.getRow();
-    long ts = put.getTimeStamp() - 1;
-    Put newPut = new Put (key, ts);
-    newPut.addColumn(FileField.getFileExtendedAttributes(),
-                  FileField.getFileState(), ts,
-                  Bytes.toBytes(FileState.RECOVERING.toString()));
-    try {
-      e.getEnvironment().getRegion().put(newPut);
-    } catch (Exception exp1) {
-      exp1.printStackTrace();
-    }
-
+    putFileState(put, e, FileState.RECOVERING);
     try {
       recoverLastBlock(kvs);
-    } catch (Exception exp2) {
-      exp2.printStackTrace();
-      newPut = new Put (key, ts);
-      newPut.addColumn(FileField.getFileExtendedAttributes(),
-                       FileField.getFileState(), ts,
-                       Bytes.toBytes(FileState.UNDER_CONSTRUCTION.toString()));
-      try {
-        e.getEnvironment().getRegion().put(newPut);
-      } catch (Exception exp3) {
-        exp3.printStackTrace();
-      }
+    } catch (Exception exception) {
+      putFileState(put, e, FileState.UNDER_CONSTRUCTION);
+    }
+  }
+
+  private void putFileState(Put put,
+     ObserverContext<RegionCoprocessorEnvironment> e, FileState fs) {
+     byte[] key = put.getRow();
+     long ts = put.getTimeStamp() - 1;
+     Put newPut = new Put (key, ts);
+     newPut.addColumn(FileField.getFileExtendedAttributes(),
+                  FileField.getFileState(), ts,
+                  Bytes.toBytes(fs.toString()));
+    try {
+      e.getEnvironment().getRegion().put(newPut);
+    } catch (Exception exception) {
+      exception.printStackTrace();
     }
   }
 

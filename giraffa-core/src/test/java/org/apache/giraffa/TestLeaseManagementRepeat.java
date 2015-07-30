@@ -72,7 +72,7 @@ public class TestLeaseManagementRepeat {
 
   @Parameterized.Parameters
   public static List<Object[]> data() {
-    return Arrays.asList(new Object[10000][0]);
+    return Arrays.asList(new Object[10][0]);
   }
 
   public TestLeaseManagementRepeat() {
