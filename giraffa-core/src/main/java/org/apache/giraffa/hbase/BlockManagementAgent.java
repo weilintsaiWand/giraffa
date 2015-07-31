@@ -203,7 +203,6 @@ public class BlockManagementAgent extends BaseRegionObserver {
         break;
       case RECOVER:
         recoverLastBlockWrapper(kvs, e, put);
-        //recoverLastBlock(kvs);
         break;
       default:
         LOG.debug("Unknown BlockAction found: " + blockAction + ", returning.");
@@ -449,9 +448,10 @@ public class BlockManagementAgent extends BaseRegionObserver {
   private boolean checkIfRacing(List<Cell> kvs,
                                 ObserverContext<RegionCoprocessorEnvironment> e,
                                 Put put) throws IOException {
-    boolean needCheck = false;
 
     // from updateINodeLease
+    // if we updateINodeLease try to update lease after it's been CLOSED
+    // clear it
     if ((kvs.size() == 1) && (findField(kvs, FileField.LEASE) != null)) {
       byte[] key = put.getRow();
       Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
@@ -459,7 +459,6 @@ public class BlockManagementAgent extends BaseRegionObserver {
         kvs.clear();
         return true;
       }
-      //needCheck = true;
     }
 
     // handle race condition that create put "UNDER_CONSTRUCTION" while
@@ -473,9 +472,10 @@ public class BlockManagementAgent extends BaseRegionObserver {
         kvs.clear();
         return true;
       }
-      //needCheck = true;
     }
 
+    // handle race condition that create put "UNDER_CONSTRUCTION" while
+    // the file is under RECOVERING by lease recovering
     if (cell != null && CellUtil.cloneValue(cell).toString().
         equals(FileState.UNDER_CONSTRUCTION.toString())) {
       byte[] key = put.getRow();
@@ -484,31 +484,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
         kvs.clear();
         return true;
       }
-      //needCheck = true;
     }
-
-//    if (needCheck) {
-//      byte[] key = put.getRow();
-//      Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
-//      if (FileFieldDeserializer.getFileState(nodeInfo).equals(FileState.CLOSED)){
-//        kvs.clear();
-//        return true;
-//      }
-//      if (FileFieldDeserializer.getFileState(nodeInfo).equals(FileState.RECOVERING)) {
-//        Cell newLeaseCell = findField(kvs, FileField.LEASE);
-////      FileLease oldLease = FileFieldDeserializer.getLease(nodeInfo);
-//      }
-
-//      Cell newLeaseCell = findField(kvs, FileField.LEASE);
-//      FileLease oldLease = FileFieldDeserializer.getLease(nodeInfo);
-//      if (newLeaseCell != null && oldLease != null) {
-//        FileLease newLease = GiraffaPBHelper.bytesToHdfsLease(CellUtil.cloneValue(newLeaseCell));
-//        if (oldLease.getLastUpdate() > newLease.getLastUpdate()) {
-//          kvs.clear();
-//          return true;
-//        }
-//      }
-    //}
 
     return false;
   }
@@ -520,7 +496,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     try {
       recoverLastBlock(kvs);
     } catch (Exception exception) {
-    //  //putFileState(put, e, FileState.UNDER_CONSTRUCTION);  // TODO
+        putFileState(put, e, FileState.UNDER_CONSTRUCTION);
     }
   }
 
