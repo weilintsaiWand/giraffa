@@ -24,6 +24,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -69,7 +70,7 @@ public class TestLeaseManagementRepeat {
 
   @RandParameterized.Parameters
   public static List<Object[]> data() {
-    return Arrays.asList(new Object[8000][0]);
+    return Arrays.asList(new Object[30][0]);
   }
 
   public TestLeaseManagementRepeat() {
@@ -107,6 +108,9 @@ public class TestLeaseManagementRepeat {
   @After
   public void after() throws IOException {
     IOUtils.cleanup(LOG, grfs, nodeManager, connection);
+    try {
+      Thread.sleep(10000L);
+    } catch (Exception ignored) {}
   }
 
   @AfterClass
@@ -181,6 +185,7 @@ public class TestLeaseManagementRepeat {
       leaseManager.setHardLimit(10L);
       INode iNode = null;
       for(int i = 0; i < 100; i++) {
+        //assertEquals(1, leaseManager.getLeases().size());
         leaseManager.triggerLeaseRecovery();
         try {Thread.sleep(100L);} catch (InterruptedException ignored) {}
         iNode = nodeManager.getINode(src);
@@ -232,7 +237,7 @@ public class TestLeaseManagementRepeat {
    * or by RegionServer shutdown, that an incomplete file with a lease migrates
    * with the Region and that the lease is reloaded upon open and stays valid.
    */
-/*
+
   @Test
   public void testLeaseMigration() throws Exception {
     String src = "/testLeaseFailure";
@@ -291,7 +296,7 @@ public class TestLeaseManagementRepeat {
     FileLease lease = iNode.getLease();
     assertThat(lease, is(nullValue()));
   }
-*/
+
   void checkLease(String src, long currentTime) throws IOException {
     INode iNode = nodeManager.getINode(src);
     FileLease lease = iNode.getLease();

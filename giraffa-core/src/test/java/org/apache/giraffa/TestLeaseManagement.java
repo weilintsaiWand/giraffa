@@ -95,6 +95,9 @@ public class TestLeaseManagement {
   @After
   public void after() throws IOException {
     IOUtils.cleanup(LOG, grfs, nodeManager, connection);
+    try {
+      Thread.sleep(10000L);
+    } catch (Exception ignored) {}
   }
 
   @AfterClass
