@@ -20,6 +20,7 @@ package org.apache.giraffa.hbase;
 import static org.apache.giraffa.GiraffaConstants.FileState;
 import static org.apache.giraffa.GiraffaConfiguration.getGiraffaTableName;
 import static org.apache.hadoop.hbase.CellUtil.matchingColumn;
+import static org.apache.giraffa.hbase.FileFieldDeserializer.getFileState;
 import static org.apache.hadoop.util.Time.now;
 
 import java.io.IOException;
@@ -455,7 +456,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     if ((kvs.size() == 1) && (findField(kvs, FileField.LEASE) != null)) {
       byte[] key = put.getRow();
       Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
-      if (FileFieldDeserializer.getFileState(nodeInfo).equals(FileState.CLOSED)){
+      if (getFileState(nodeInfo).equals(FileState.CLOSED)){
         kvs.clear();
         return true;
       }
@@ -468,7 +469,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
           equals(FileState.UNDER_CONSTRUCTION.toString())) {
       byte[] key = put.getRow();
       Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
-      if (FileFieldDeserializer.getFileState(nodeInfo).equals(FileState.CLOSED)){
+      if (getFileState(nodeInfo).equals(FileState.CLOSED)){
         kvs.clear();
         return true;
       }
@@ -480,7 +481,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
         equals(FileState.UNDER_CONSTRUCTION.toString())) {
       byte[] key = put.getRow();
       Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
-      if (FileFieldDeserializer.getFileState(nodeInfo).equals(FileState.RECOVERING)){
+      if (getFileState(nodeInfo).equals(FileState.RECOVERING)){
         kvs.clear();
         return true;
       }
