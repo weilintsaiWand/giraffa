@@ -20,9 +20,11 @@ package org.apache.giraffa.hbase;
 import static org.apache.giraffa.GiraffaConstants.FileState;
 import static org.apache.giraffa.GiraffaConfiguration.getGiraffaTableName;
 import static org.apache.hadoop.hbase.CellUtil.matchingColumn;
+import static org.apache.giraffa.hbase.FileFieldDeserializer.getFileState;
 import static org.apache.hadoop.util.Time.now;
 
 import java.io.IOException;
+import java.security.Timestamp;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -47,7 +49,9 @@ import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Durability;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
 import org.apache.hadoop.hbase.coprocessor.CoprocessorException;
@@ -182,6 +186,8 @@ public class BlockManagementAgent extends BaseRegionObserver {
     List<Cell> kvs = put.getFamilyCellMap().get(FileField.getFileAttributes());
     // If not File Attributes related then skip processing
     if (kvs == null) { return; }
+    if (checkIfRacing(kvs, e, put)) { return; }
+
     BlockAction blockAction = getBlockAction(kvs);
     if(blockAction == null) {
       return;
@@ -197,7 +203,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
         completeBlocks(kvs);
         break;
       case RECOVER:
-        recoverLastBlock(kvs);
+        recoverLastBlockWrapper(kvs, e, put);
         break;
       default:
         LOG.debug("Unknown BlockAction found: " + blockAction + ", returning.");
@@ -406,15 +412,15 @@ public class BlockManagementAgent extends BaseRegionObserver {
 
     if(leaseBytes == null || leaseBytes.length == 0) {
       LOG.warn("Could not perform recovery due to missing lease field.");
-      return;
+      throw new IOException("Could not perform recovery due to missing lease field.");
     }
     if(blockBytes == null || blockBytes.length == 0) {
       LOG.warn("Could not perform recovery due to missing blocks field.");
-      return;
+      throw new IOException("Could not perform recovery due to missing blocks field.");
     }
     if(unlocatedBlocks == null || unlocatedBlocks.size() == 0) {
       LOG.warn("Could not perform recovery due to zero blocks in file.");
-      return;
+      throw new IOException("Could not perform recovery due to zero blocks in file.");
     }
 
     FileLease lease = GiraffaPBHelper.bytesToHdfsLease(leaseBytes);
@@ -425,7 +431,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     removeField(kvs, FileField.ACTION);
     if(!recovered) {
       LOG.error("Block could not be recovered. File is still under recovery.");
-      return;
+      throw new IOException("Block could not be recovered. File is still under recovery.");
     } else {
       LOG.info("Recovered block file: " + blockFileName);
     }
@@ -438,6 +444,82 @@ public class BlockManagementAgent extends BaseRegionObserver {
     updateField(kvs, FileField.LENGTH, Bytes.toBytes(fileInfo.getLen()));
     updateField(kvs, FileField.FILE_STATE,
         Bytes.toBytes(FileState.CLOSED.toString()));
+  }
+
+
+  private boolean checkIfRacing(List<Cell> kvs,
+                                ObserverContext<RegionCoprocessorEnvironment> e,
+                                Put put) throws IOException {
+
+    // from updateINodeLease
+    // if we updateINodeLease try to update lease after it's been CLOSED
+    // clear it
+    if ((kvs.size() == 1) && (findField(kvs, FileField.LEASE) != null)) {
+      if (isFileStateEquals(e, put , FileState.CLOSED)){
+        kvs.clear();
+        return true;
+      }
+    }
+//
+//    // handle race condition that create put "UNDER_CONSTRUCTION" while
+//    // the file already close by lease recovering
+//    Cell cell = findField(kvs, FileField.FILE_STATE);
+//    if (cell != null && CellUtil.cloneValue(cell).toString().
+//          equals(FileState.UNDER_CONSTRUCTION.toString())) {
+//      if (isFileStateEquals(e, put, FileState.CLOSED)){
+//        kvs.clear();
+//        return true;
+//      }
+//    }
+//
+//    // handle race condition that create put "UNDER_CONSTRUCTION" while
+//    // the file is under RECOVERING by lease recovering
+//    if (cell != null && CellUtil.cloneValue(cell).toString().
+//        equals(FileState.UNDER_CONSTRUCTION.toString())) {
+//      if (isFileStateEquals(e, put, FileState.RECOVERING)){
+//        kvs.clear();
+//        return true;
+//      }
+//    }
+
+    return false;
+  }
+
+  /**
+   * Get current INode info and check if FileState equals given value
+   */
+  private boolean isFileStateEquals(
+      ObserverContext<RegionCoprocessorEnvironment> e, Put put, FileState fs)
+      throws IOException{
+    byte[] key = put.getRow();
+    Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
+    return getFileState(nodeInfo).equals(fs);
+  }
+
+  private void recoverLastBlockWrapper(List<Cell> kvs,
+                                ObserverContext<RegionCoprocessorEnvironment> e,
+                                Put put) {
+    //putFileState(put, e, FileState.RECOVERING);
+    try {
+      recoverLastBlock(kvs);
+    } catch (Exception ignored) {
+    //    putFileState(put, e, FileState.UNDER_CONSTRUCTION);
+    }
+  }
+
+  private void putFileState(Put put,
+     ObserverContext<RegionCoprocessorEnvironment> e, FileState fs) {
+     byte[] key = put.getRow();
+     long ts = put.getTimeStamp() - 1;
+     Put newPut = new Put (key, ts);
+     newPut.addColumn(FileField.getFileAttributes(),
+                  FileField.getFileState(), ts,
+                  Bytes.toBytes(fs.toString()));
+    try {
+      e.getEnvironment().getRegion().put(newPut);
+    } catch (Exception exception) {
+      exception.printStackTrace();
+    }
   }
 
   private boolean recoverBlockFile(ExtendedBlock block) throws IOException {
