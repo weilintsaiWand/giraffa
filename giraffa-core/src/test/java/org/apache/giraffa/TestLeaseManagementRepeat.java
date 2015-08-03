@@ -41,8 +41,10 @@ import org.apache.hadoop.hbase.MiniHBaseCluster;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.regionserver.HRegionServer;
+import org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException;
 import org.apache.hadoop.hdfs.protocol.HdfsConstants;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.util.Time;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -70,7 +72,7 @@ public class TestLeaseManagementRepeat {
 
   @RandParameterized.Parameters
   public static List<Object[]> data() {
-    return Arrays.asList(new Object[30][0]);
+    return Arrays.asList(new Object[2][0]);
   }
 
   public TestLeaseManagementRepeat() {
@@ -117,7 +119,7 @@ public class TestLeaseManagementRepeat {
   public static void afterClass() throws Exception {
     UTIL.shutdownMiniCluster();
   }
-/*
+
   @Test
   public void testLeaseCreation() throws IOException {
     String src = "/testLeaseCreation";
@@ -135,7 +137,7 @@ public class TestLeaseManagementRepeat {
     } finally {
       IOUtils.closeStream(outputStream);
     }
-    INode iNode = nodeManager.getINode(src);
+    INodeFile iNode = INodeFile.valueOf(nodeManager.getINode(src));
     assertThat(iNode.getFileState(), is(FileState.CLOSED));
     FileLease lease = iNode.getLease();
     assertThat(lease, is(nullValue()));
@@ -160,12 +162,12 @@ public class TestLeaseManagementRepeat {
     } finally {
       IOUtils.closeStream(outputStream);
     }
-    INode iNode = nodeManager.getINode(src);
+    INodeFile iNode = INodeFile.valueOf(nodeManager.getINode(src));
     assertThat(iNode.getFileState(), is(FileState.CLOSED));
     FileLease lease = iNode.getLease();
     assertThat(lease, is(nullValue()));
   }
-*/
+
 
   @Test
   public void testLeaseRecovery() throws IOException {
@@ -183,16 +185,15 @@ public class TestLeaseManagementRepeat {
     outputStream.hflush();
     try {
       leaseManager.setHardLimit(10L);
-      INode iNode = null;
+      INodeFile iNode = null;
       for(int i = 0; i < 100; i++) {
         //assertEquals(1, leaseManager.getLeases().size());
         leaseManager.triggerLeaseRecovery();
         try {Thread.sleep(100L);} catch (InterruptedException ignored) {}
-        iNode = nodeManager.getINode(src);
+        iNode = INodeFile.valueOf(nodeManager.getINode(src));
         if(iNode.getFileState() == FileState.CLOSED)
           break;
       }
-      assert iNode != null : "INode was null. File was not closed in 10 secs.";
       assertThat(iNode.getFileState(), is(FileState.CLOSED));
       assertThat(iNode.getLen(), is(2L));
       assertThat(iNode.getLease(), is(nullValue()));
@@ -203,7 +204,7 @@ public class TestLeaseManagementRepeat {
     }
   }
 
-/*
+
   @Test
   public void testClientLeaseRecovery() throws IOException {
     String src = "/testLeaseRecovery";
@@ -222,7 +223,7 @@ public class TestLeaseManagementRepeat {
       boolean recovered = grfs.grfaClient.getNamespaceService().recoverLease(
           src, grfs.grfaClient.getClientName());
       assertThat(recovered, is(true));
-      INode iNode = nodeManager.getINode(src);
+      INodeFile iNode = INodeFile.valueOf(nodeManager.getINode(src));
       assertThat(iNode.getFileState(), is(FileState.CLOSED));
       assertThat(iNode.getLen(), is(2L));
       assertThat(iNode.getLease(), is(nullValue()));
@@ -231,7 +232,7 @@ public class TestLeaseManagementRepeat {
       IOUtils.closeStream(outputStream);
     }
   }
-*/
+
   /**
    * This test shows that if a Region is to "migrate", either by split
    * or by RegionServer shutdown, that an incomplete file with a lease migrates
@@ -252,14 +253,14 @@ public class TestLeaseManagementRepeat {
       cluster.stopRegionServer(dyingServer.getServerName());
       cluster.waitForRegionServerToStop(dyingServer.getServerName(), 10000L);
 
-      INode iNode = null;
+      INodeFile iNode = null;
       do {
         try {
           IOUtils.cleanup(LOG, connection);
           connection = ConnectionFactory.createConnection(conf);
           IOUtils.cleanup(LOG, nodeManager);
           nodeManager = GiraffaTestUtils.getNodeManager(conf, connection);
-          iNode = nodeManager.getINode(src);
+          iNode = INodeFile.valueOf(nodeManager.getINode(src));
         } catch (ConnectException ignored) {}
       } while(iNode == null);
 
@@ -282,7 +283,7 @@ public class TestLeaseManagementRepeat {
       // Renewing the lease restores the consistency.
       grfs.grfaClient.getNamespaceService().renewLease(
           grfs.grfaClient.getClientName());
-      iNode = nodeManager.getINode(src);
+      iNode = INodeFile.valueOf(nodeManager.getINode(src));
       rowLease = iNode.getLease();
       leases = leaseManager.getLeases(rowLease.getHolder());
       assertThat(leases.size(), is(1));
@@ -291,14 +292,14 @@ public class TestLeaseManagementRepeat {
     } finally {
       IOUtils.cleanup(LOG, outputStream);
     }
-    INode iNode = nodeManager.getINode(src);
+    INodeFile iNode = INodeFile.valueOf(nodeManager.getINode(src));
     assertThat(iNode.getFileState(), is(FileState.CLOSED));
     FileLease lease = iNode.getLease();
     assertThat(lease, is(nullValue()));
   }
 
   void checkLease(String src, long currentTime) throws IOException {
-    INode iNode = nodeManager.getINode(src);
+    INodeFile iNode = INodeFile.valueOf(nodeManager.getINode(src));
     FileLease lease = iNode.getLease();
     assertThat(iNode.getFileState(),
         is(FileState.UNDER_CONSTRUCTION));
