@@ -446,6 +446,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
         Bytes.toBytes(FileState.CLOSED.toString()));
   }
 
+
   private boolean checkIfRacing(List<Cell> kvs,
                                 ObserverContext<RegionCoprocessorEnvironment> e,
                                 Put put) throws IOException {
@@ -454,9 +455,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     // if we updateINodeLease try to update lease after it's been CLOSED
     // clear it
     if ((kvs.size() == 1) && (findField(kvs, FileField.LEASE) != null)) {
-      byte[] key = put.getRow();
-      Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
-      if (getFileState(nodeInfo).equals(FileState.CLOSED)){
+      if (isFileStateEquals(e, put , FileState.CLOSED)){
         kvs.clear();
         return true;
       }
@@ -467,9 +466,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     Cell cell = findField(kvs, FileField.FILE_STATE);
     if (cell != null && CellUtil.cloneValue(cell).toString().
           equals(FileState.UNDER_CONSTRUCTION.toString())) {
-      byte[] key = put.getRow();
-      Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
-      if (getFileState(nodeInfo).equals(FileState.CLOSED)){
+      if (isFileStateEquals(e, put, FileState.CLOSED)){
         kvs.clear();
         return true;
       }
@@ -479,15 +476,24 @@ public class BlockManagementAgent extends BaseRegionObserver {
     // the file is under RECOVERING by lease recovering
     if (cell != null && CellUtil.cloneValue(cell).toString().
         equals(FileState.UNDER_CONSTRUCTION.toString())) {
-      byte[] key = put.getRow();
-      Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
-      if (getFileState(nodeInfo).equals(FileState.RECOVERING)){
+      if (isFileStateEquals(e, put, FileState.RECOVERING)){
         kvs.clear();
         return true;
       }
     }
 
     return false;
+  }
+
+  /**
+   * Get current INode info and check if FileState equals given value
+   */
+  private boolean isFileStateEquals(
+      ObserverContext<RegionCoprocessorEnvironment> e, Put put, FileState fs)
+      throws IOException{
+    byte[] key = put.getRow();
+    Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
+    return getFileState(nodeInfo).equals(fs);
   }
 
   private void recoverLastBlockWrapper(List<Cell> kvs,
