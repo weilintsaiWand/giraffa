@@ -24,7 +24,6 @@ import static org.apache.giraffa.hbase.FileFieldDeserializer.getFileState;
 import static org.apache.hadoop.util.Time.now;
 
 import java.io.IOException;
-import java.security.Timestamp;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -203,7 +202,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
         completeBlocks(kvs);
         break;
       case RECOVER:
-        recoverLastBlockWrapper(kvs, e, put);
+        recoverLastBlock(kvs);
         break;
       default:
         LOG.debug("Unknown BlockAction found: " + blockAction + ", returning.");
@@ -412,15 +411,15 @@ public class BlockManagementAgent extends BaseRegionObserver {
 
     if(leaseBytes == null || leaseBytes.length == 0) {
       LOG.warn("Could not perform recovery due to missing lease field.");
-      throw new IOException("Could not perform recovery due to missing lease field.");
+      return;
     }
     if(blockBytes == null || blockBytes.length == 0) {
       LOG.warn("Could not perform recovery due to missing blocks field.");
-      throw new IOException("Could not perform recovery due to missing blocks field.");
+      return;
     }
     if(unlocatedBlocks == null || unlocatedBlocks.size() == 0) {
       LOG.warn("Could not perform recovery due to zero blocks in file.");
-      throw new IOException("Could not perform recovery due to zero blocks in file.");
+      return;
     }
 
     FileLease lease = GiraffaPBHelper.bytesToHdfsLease(leaseBytes);
@@ -431,7 +430,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     removeField(kvs, FileField.ACTION);
     if(!recovered) {
       LOG.error("Block could not be recovered. File is still under recovery.");
-      throw new IOException("Block could not be recovered. File is still under recovery.");
+      return;
     } else {
       LOG.info("Recovered block file: " + blockFileName);
     }
@@ -494,32 +493,6 @@ public class BlockManagementAgent extends BaseRegionObserver {
     byte[] key = put.getRow();
     Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
     return getFileState(nodeInfo).equals(fs);
-  }
-
-  private void recoverLastBlockWrapper(List<Cell> kvs,
-                                ObserverContext<RegionCoprocessorEnvironment> e,
-                                Put put) {
-    //putFileState(put, e, FileState.RECOVERING);
-    try {
-      recoverLastBlock(kvs);
-    } catch (Exception ignored) {
-    //    putFileState(put, e, FileState.UNDER_CONSTRUCTION);
-    }
-  }
-
-  private void putFileState(Put put,
-     ObserverContext<RegionCoprocessorEnvironment> e, FileState fs) {
-     byte[] key = put.getRow();
-     long ts = put.getTimeStamp() - 1;
-     Put newPut = new Put (key, ts);
-     newPut.addColumn(FileField.getFileAttributes(),
-                  FileField.getFileState(), ts,
-                  Bytes.toBytes(fs.toString()));
-    try {
-      e.getEnvironment().getRegion().put(newPut);
-    } catch (Exception exception) {
-      exception.printStackTrace();
-    }
   }
 
   private boolean recoverBlockFile(ExtendedBlock block) throws IOException {
