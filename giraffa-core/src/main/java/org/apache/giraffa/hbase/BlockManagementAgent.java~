@@ -185,7 +185,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     List<Cell> kvs = put.getFamilyCellMap().get(FileField.getFileAttributes());
     // If not File Attributes related then skip processing
     if (kvs == null) { return; }
-    if (checkFileClosed(kvs, e, put.getRow())) { return; }
+    if (checkIfRacing(kvs, e, put)) { return; }
 
     BlockAction blockAction = getBlockAction(kvs);
     if(blockAction == null) {
@@ -445,14 +445,16 @@ public class BlockManagementAgent extends BaseRegionObserver {
         Bytes.toBytes(FileState.CLOSED.toString()));
   }
 
-  private boolean checkFileClosed(List<Cell> kvs,
-                                  ObserverContext<RegionCoprocessorEnvironment> e,
-                                  byte[] key) throws IOException {
+
+  private boolean checkIfRacing(List<Cell> kvs,
+                                ObserverContext<RegionCoprocessorEnvironment> e,
+                                Put put) throws IOException {
+
     // from updateINodeLease
-    // if updateINodeLease try to update lease after it's been CLOSED
-    // discard it
+    // if we updateINodeLease try to update lease after it's been CLOSED
+    // clear it
     if ((kvs.size() == 1) && (findField(kvs, FileField.LEASE) != null)) {
-      if (isFileStateEquals(e, key, FileState.CLOSED)){
+      if (isFileStateEquals(e, put , FileState.CLOSED)){
         kvs.clear();
         return true;
       }
@@ -486,8 +488,9 @@ public class BlockManagementAgent extends BaseRegionObserver {
    * Get current INode info and check if FileState equals given value
    */
   private boolean isFileStateEquals(
-      ObserverContext<RegionCoprocessorEnvironment> e, byte[] key, FileState fs)
+      ObserverContext<RegionCoprocessorEnvironment> e, Put put, FileState fs)
       throws IOException{
+    byte[] key = put.getRow();
     Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
     return getFileState(nodeInfo).equals(fs);
   }

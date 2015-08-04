@@ -72,7 +72,7 @@ public class TestLeaseManagementRepeat {
 
   @RandParameterized.Parameters
   public static List<Object[]> data() {
-    return Arrays.asList(new Object[100][0]);
+    return Arrays.asList(new Object[2000][0]);
   }
 
   public TestLeaseManagementRepeat() {
@@ -110,9 +110,9 @@ public class TestLeaseManagementRepeat {
   @After
   public void after() throws IOException {
     IOUtils.cleanup(LOG, grfs, nodeManager, connection);
-    try {
-      Thread.sleep(10000L);
-    } catch (Exception ignored) {}
+//    try {
+//      Thread.sleep(10000L);
+//    } catch (Exception ignored) {}
   }
 
   @AfterClass
