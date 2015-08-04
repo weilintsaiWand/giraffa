@@ -445,16 +445,24 @@ public class BlockManagementAgent extends BaseRegionObserver {
         Bytes.toBytes(FileState.CLOSED.toString()));
   }
 
+  /**
+   * Check if some ones tries to update lease while the file is closed
+   */
   private boolean checkFileClosed( byte[] key, List<Cell> kvs,
       ObserverContext<RegionCoprocessorEnvironment> e) throws IOException {
-    // from updateINodeLease
-    // if updateINodeLease try to update lease after it's been CLOSED
-    // discard it
-    if ((kvs.size() == 1) && (findField(kvs, FileField.LEASE) != null)) {
+    if (findField(kvs, FileField.LEASE) != null) {
       Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
       if(getFileState(nodeInfo).equals(FileState.CLOSED)) {
-        kvs.clear();
-        return true;
+        if (kvs.size() == 1) { // it's updateINodeLease
+          // If updateINodeLease try to update lease after it's been CLOSED,
+          // discard it
+          kvs.clear();
+          return true;
+        } else {
+          // Not sure who to handle this case so leave a warning here
+          LOG.warn("Could not update INode with lease when the file"
+                   + " is closed.");
+        }
       }
     }
 //
