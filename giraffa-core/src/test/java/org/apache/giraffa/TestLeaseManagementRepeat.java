@@ -24,7 +24,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -72,7 +71,7 @@ public class TestLeaseManagementRepeat {
 
   @RandParameterized.Parameters
   public static List<Object[]> data() {
-    return Arrays.asList(new Object[2000][0]);
+    return Arrays.asList(new Object[5][0]);
   }
 
   public TestLeaseManagementRepeat() {
