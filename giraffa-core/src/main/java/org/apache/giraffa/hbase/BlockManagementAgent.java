@@ -117,7 +117,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
     if(!hdfs.mkdirs(new Path(GRFA_BLOCKS_DIR)))
       msg = "Cannot create finalized block directory: " + GRFA_BLOCKS_DIR;
     else if(!hdfs.mkdirs(new Path(GRFA_TMP_BLOCKS_DIR)))
-      msg = "Cannot create remporary block directory: " + GRFA_TMP_BLOCKS_DIR;
+      msg = "Cannot create temporary block directory: " + GRFA_TMP_BLOCKS_DIR;
     if(msg != null) {
       LOG.error(msg);
       throw new IOException(msg);
@@ -309,7 +309,7 @@ public class BlockManagementAgent extends BaseRegionObserver {
       List<DatanodeInfo[]> al_locs =
           byteArrayToLocsList(CellUtil.cloneValue(locsKv));
 
-      // get new empty Block, seperate into blocks/locations, and add to lists
+      // get new empty Block, separate into blocks/locations, and add to lists
       LocatedBlock locatedBlock = allocateBlockFile(al_blks);
       UnlocatedBlock blk = new UnlocatedBlock(locatedBlock);
       DatanodeInfo[] locs = locatedBlock.getLocations();
@@ -452,15 +452,18 @@ public class BlockManagementAgent extends BaseRegionObserver {
       ObserverContext<RegionCoprocessorEnvironment> e) throws IOException {
     if (findField(kvs, FileField.LEASE) != null) {
       Result nodeInfo = e.getEnvironment().getRegion().get(new Get(key));
-      if(getFileState(nodeInfo).equals(FileState.CLOSED)) {
+      if(nodeInfo.getRow() != null &&
+         getFileState(nodeInfo).equals(FileState.CLOSED)) {
         if (kvs.size() == 1) { // it's updateINodeLease
           // If updateINodeLease try to update lease after it's been CLOSED,
           // discard it
+          LOG.warn("Attempt to update lease for a file that has been already"
+                   + " closed. Ignoring.");
           kvs.clear();
           return true;
         } else {
-          // Not sure who to handle this case so leave a warning here
-          LOG.warn("Could not update INode with lease when the file"
+          // Not sure how to handle this case so leave a warning here
+          LOG.warn("Could not update INode with lease while the file"
                    + " is closed.");
         }
       }
